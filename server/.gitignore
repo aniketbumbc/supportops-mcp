@@ -6,3 +6,4 @@ dist
 README.md
 .env.example
 TODO.md
+src/db/migrations/

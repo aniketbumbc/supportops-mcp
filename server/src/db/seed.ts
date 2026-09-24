@@ -666,7 +666,12 @@ const ROLE_POLICIES = [
     role: 'support_agent',
     description:
       'Front-line support. Reads everything, manages tickets, cannot refund.',
-    allowedTools: [...READ_TOOLS, 'create_support_ticket', 'update_ticket'],
+    allowedTools: [
+      ...READ_TOOLS,
+      'create_support_ticket',
+      'update_ticket',
+      'update_customer',
+    ],
     directRefundLimitMinor: 0,
     approvalRefundLimitMinor: 0,
     canApproveRefunds: false,
@@ -919,6 +924,13 @@ async function seed() {
     // 6. Move sequences past seeded values so new records don't collide.
     await tx.execute(
       rawSql`SELECT setval('mock.ticket_number_seq', ${1000 + orderedTickets.length})`,
+    );
+    await tx.execute(rawSql`SELECT setval('mock.customer_ref_seq', 50000)`);
+    await tx.execute(
+      rawSql`SELECT setval('mock.payment_ref_seq', ${paymentCounter})`,
+    );
+    await tx.execute(
+      rawSql`SELECT setval('mock.subscription_ref_seq', (SELECT max(substring(subscription_ref from 5)::int) FROM mock.subscriptions))`,
     );
     if (pendingRefunds.length > 0) {
       await tx.execute(

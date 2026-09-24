@@ -84,6 +84,12 @@ export const commentAuthorType = mockSchema.enum('comment_author_type', [
   'agent',
   'system',
 ]);
+export const subscriptionRefSeq = mockSchema.sequence('subscription_ref_seq', {
+  startWith: 1,
+});
+export const paymentRefSeq = mockSchema.sequence('payment_ref_seq', {
+  startWith: 1,
+});
 
 // ─── Sequences for human-readable references ─────────────
 export const ticketNumberSeq = mockSchema.sequence('ticket_number_seq', {
@@ -91,6 +97,9 @@ export const ticketNumberSeq = mockSchema.sequence('ticket_number_seq', {
 });
 export const refundRefSeq = mockSchema.sequence('refund_ref_seq', {
   startWith: 1,
+});
+export const customerRefSeq = mockSchema.sequence('customer_ref_seq', {
+  startWith: 5001,
 });
 
 const timestamps = {
@@ -113,6 +122,9 @@ export const customers = mockSchema.table(
     status: customerStatus('status').notNull().default('active'),
     region: text('region').notNull(),
     ...timestamps,
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index('customers_tenant_idx').on(t.tenantId),
@@ -157,6 +169,7 @@ export const subscriptions = mockSchema.table(
     currentPeriodEnd: timestamp('current_period_end', {
       withTimezone: true,
     }).notNull(),
+    idempotencyKey: text('idempotency_key').unique(),
     ...timestamps,
   },
   (t) => [index('subscriptions_customer_idx').on(t.customerId)],

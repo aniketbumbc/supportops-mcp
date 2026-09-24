@@ -8,6 +8,27 @@
       "when": 1790224081602,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790233621282,
+      "tag": "0001_customer_writes",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790233898653,
+      "tag": "0002_customer_writes_column_add_updatedat",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790235689392,
+      "tag": "0003_subscription_writes",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,8 @@ export const TOOL_NAMES = [
   'create_support_ticket',
   'update_ticket',
   'issue_refund',
+  'create_customer',
+  'update_customer',
 ] as const;
 
 export type ToolName = (typeof TOOL_NAMES)[number];
