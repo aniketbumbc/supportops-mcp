@@ -3,8 +3,9 @@ import { z } from 'zod';
 import { toToolError } from '../errors/index';
 import { FIND_LIMIT } from '../services/customer-service';
 import type { ToolDeps } from './types';
+import type { ToolName } from '../policy/tool-names';
 
-export const FIND_CUSTOMER = 'find_customer';
+export const FIND_CUSTOMER = 'find_customer' as ToolName;
 
 /**
  * Input schema: types and descriptions only. Range rules (2–100 characters,
