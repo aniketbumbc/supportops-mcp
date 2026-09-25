@@ -6,10 +6,10 @@ import { AppError } from '../errors/index';
 import type { Role } from '../policy/roles';
 
 /**
- * - **What it is:** a small object created once per tool call and passed through every layer.
-- **What it carries:** the caller's identity (user ID, tenant, roles), a correlation ID, and a logger pre-tagged with that ID.
-- **Why identity matters:** services use it for access decisions, such as masking emails for `support_agent`.
-- **Why the ID matters:** every log line, upstream call and error for a request shares it, so a single request can be traced end to end.
+ * - What it is: a small object created once per tool call and passed through every layer.
+- What it carries: the caller's identity (user ID, tenant, roles), a correlation ID, and a logger pre-tagged with that ID.
+- Why identity matters: services use it for access decisions, such as masking emails for `support_agent`.
+- Why the ID matters: every log line, upstream call and error for a request shares it, so a single request can be traced end to end.
  */
 
 /** Who is calling. Comes from env in dev mode. */
