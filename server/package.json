@@ -16,7 +16,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed.ts",
-    "dev:mock": "tsx src/crm-system/server.ts"
+    "dev:mock": "tsx src/crm-system/server.ts",
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.1",
