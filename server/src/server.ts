@@ -19,6 +19,7 @@ import { createServices } from './services/index';
 import { TOOL_REGISTRY } from './tools/index';
 import { registerMcpRoutes, SERVER_INFO } from './transport/mcp';
 import { getJwtKeys } from './gateway/keys';
+import { authRoutes } from './transport/auth-routes';
 
 type CheckResult = { ok: boolean; latencyMs: number; error?: string };
 
@@ -88,6 +89,9 @@ export async function buildServer() {
     });
   });
 
+  if (env.AUTH_MODE === 'jwt') {
+    await app.register(authRoutes, { services });
+  }
   registerMcpRoutes(app, { services });
 
   return app;

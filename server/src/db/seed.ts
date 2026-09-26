@@ -8,10 +8,10 @@
  */
 import { randomBytes } from 'node:crypto';
 import { sql as rawSql } from 'drizzle-orm';
-import { env } from '../config/env.js';
-import { READ_TOOLS, TOOL_NAMES } from '../policy/tool-names.js';
-import { closeDb, db } from './client.js';
-import { formatInvoiceNumber, formatRef } from './refs.js';
+import { env } from '../config/env';
+import { READ_TOOLS, TOOL_NAMES } from '../policy/tool-names';
+import { closeDb, db } from './client';
+import { formatInvoiceNumber, formatRef } from './refs';
 import {
   contacts,
   customers,
@@ -24,6 +24,7 @@ import {
   ticketComments,
   tickets,
 } from './schema/index.js';
+import { hashPassword } from '../gateway/passwords';
 
 // ─── Helpers ─────────────────────────────────────────────
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -702,6 +703,39 @@ const ROLE_POLICIES = [
     canApproveRefunds: true,
   },
 ];
+const LOGIN_USERS = [
+  {
+    email: 'agent@crm.example',
+    displayName: 'Priya Sharma',
+    roles: ['support_agent'],
+    isActive: true,
+  },
+  {
+    email: 'lead@crm.example',
+    displayName: 'Amit Desai',
+    roles: ['support_lead'],
+    isActive: true,
+  },
+  {
+    email: 'finance@crm.example',
+    displayName: 'Meera Iyer',
+    roles: ['finance'],
+    isActive: true,
+  },
+  {
+    email: 'admin@crm.example',
+    displayName: 'Admin User',
+    roles: ['admin'],
+    isActive: true,
+  },
+  // For testing that disabled accounts cannot log in.
+  {
+    email: 'disabled@crm.example',
+    displayName: 'Former Employee',
+    roles: ['support_agent'],
+    isActive: false,
+  },
+];
 
 // ─── Seed ────────────────────────────────────────────────
 async function seed() {
@@ -711,13 +745,15 @@ async function seed() {
     );
     process.exit(1);
   }
+  const SEED_PASSWORD = process.env.SEED_USER_PASSWORD || '';
 
+  const passwordHash = await hashPassword(SEED_PASSWORD);
   const summary = await db.transaction(async (tx) => {
     // 1. Wipe mock data and platform activity (role policies are upserted below).
     await tx.execute(rawSql`
       TRUNCATE mock.ticket_comments, mock.tickets, mock.refunds, mock.payments,
                mock.invoice_lines, mock.invoices, mock.subscriptions, mock.contacts,
-               mock.customers, platform.audit_log, platform.approvals
+               mock.customers, platform.audit_log, platform.approvals, platform.personal_access_tokens
       RESTART IDENTITY CASCADE
     `);
 
@@ -947,6 +983,18 @@ async function seed() {
           target: rolePolicies.role,
           set: { ...policy, updatedAt: new Date() },
         });
+    }
+    for (const u of LOGIN_USERS) {
+      await tx.execute(rawSql`
+        INSERT INTO platform.users (email, password_hash, display_name, roles, is_active)
+        VALUES (${u.email}, ${passwordHash}, ${u.displayName}, ${`{${u.roles.join(',')}}`}::text[], ${u.isActive})
+        ON CONFLICT (lower(email)) DO UPDATE SET
+          password_hash = EXCLUDED.password_hash,
+          display_name  = EXCLUDED.display_name,
+          roles         = EXCLUDED.roles,
+          is_active     = EXCLUDED.is_active,
+          updated_at    = now()
+      `);
     }
 
     return {

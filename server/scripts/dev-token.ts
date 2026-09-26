@@ -23,6 +23,7 @@ import { parseArgs } from 'node:util';
 import { exportJWK, generateKeyPair, importJWK, SignJWT, type JWK } from 'jose';
 import { env } from '../src/config/env.js';
 import { ROLES, type Role } from '../src/policy/roles.js';
+import { TOKEN_TYPE_CLAIM } from '../src/gateway/token';
 
 const ALG = 'RS256';
 
@@ -115,6 +116,7 @@ async function main() {
   const jwt = new SignJWT({
     [env.JWT_ROLES_CLAIM]: roles,
     [env.JWT_TENANT_CLAIM]: args.tenant,
+    [env.JWT_ROLES_CLAIM]: roles,
     ...(args.name && { name: args.name }),
   })
     .setProtectedHeader({ alg: ALG, kid: privateJwk.kid, typ: 'JWT' })

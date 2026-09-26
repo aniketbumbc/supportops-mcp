@@ -29,6 +29,20 @@
       "when": 1790235689392,
       "tag": "0003_subscription_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790398248694,
+      "tag": "0004_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790408457327,
+      "tag": "0005_audit_auth",
+      "breakpoints": true
     }
   ]
 }

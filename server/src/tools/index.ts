@@ -14,6 +14,7 @@ import {
   registerSearchCustomerTickets,
 } from './search-customer-tickets';
 import type { ToolDeps } from './types';
+import { canUseTool } from '../policy/role-policy-store';
 
 interface ToolEntry {
   name: ToolName;
@@ -37,11 +38,29 @@ export const TOOL_REGISTRY: ToolEntry[] = [
  * Phase 4 adds the role filter here: only tools the caller's role allows get
  * registered, so tools/list shows each user exactly what they may use.
  */
+/**
+ * Registers only the tools the caller's roles allow, so tools/list shows each user
+ * exactly what they may use. A tool that isn't registered can't be called: the
+ * SDK answers "Tool ... not found", the same as for a tool that doesn't exist.
+ */
 export function registerTools(server: McpServer, deps: ToolDeps): string[] {
-  const registered: string[] = [];
-  for (const tool of TOOL_REGISTRY) {
-    tool.register(server, deps);
-    registered.push(tool.name);
+  const allowed = TOOL_REGISTRY.filter((tool) =>
+    canUseTool(deps.policy, tool.name),
+  );
+
+  if (allowed.length === 0) {
+    // With no tools the SDK would answer tools/list with "Method not found", which
+    // looks like a broken server. Registering and removing a placeholder makes it
+    // declare the tools capability and return an empty list instead.
+    server
+      .registerTool(
+        '__no_tools__',
+        { description: 'placeholder' },
+        async () => ({ content: [] }),
+      )
+      .remove();
   }
-  return registered;
+
+  for (const tool of allowed) tool.register(server, deps);
+  return allowed.map((tool) => tool.name);
 }

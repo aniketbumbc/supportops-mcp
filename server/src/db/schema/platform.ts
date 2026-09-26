@@ -14,6 +14,8 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { uniqueIndex } from 'drizzle-orm/pg-core';
 
 export const platformSchema = pgSchema('platform');
 
@@ -81,6 +83,12 @@ export const auditLog = platformSchema.table(
     resultSummary: jsonb('result_summary').$type<Record<string, unknown>>(),
     errorCode: text('error_code'),
     durationMs: integer('duration_ms').notNull(),
+    /** How the caller authenticated: 'dev', 'access' (login token) or 'pat'. */
+    authMethod: text('auth_method').notNull().default('unknown'),
+    /** Token "jti"; for PATs, the personal_access_tokens id. */
+    tokenId: text('token_id'),
+    /** PAT name, e.g. "Cursor on laptop". */
+    tokenName: text('token_name'),
   },
   (t) => [
     index('audit_occurred_idx').on(t.occurredAt),
@@ -119,4 +127,57 @@ export const approvals = platformSchema.table(
     index('approvals_status_idx').on(t.status),
     index('approvals_requested_by_idx').on(t.requestedBy),
   ],
+);
+
+/**
+ * People who can log in (frontend) and own personal access tokens (Cursor, Claude).
+ * Roles are checked against role_policies; unknown roles are ignored at login.
+ */
+export const users = platformSchema.table(
+  'users',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: text('tenant_id').notNull().default('default'),
+    /** Always stored lowercase, so logins are case-insensitive. */
+    email: text('email').notNull(),
+    passwordHash: text('password_hash').notNull(),
+    displayName: text('display_name').notNull(),
+    roles: text('roles').array().notNull(),
+    isActive: boolean('is_active').notNull().default(true),
+    lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex('users_email_unique').on(sql`lower(${t.email})`)],
+);
+
+/**
+ * Long-lived tokens users create for MCP clients like Cursor or Claude.
+ * The token itself is never stored: only its id (the JWT "jti"), so it can be
+ * listed, tracked and revoked.
+ */
+export const personalAccessTokens = platformSchema.table(
+  'personal_access_tokens',
+  {
+    /** Same value as the token's "jti" claim. */
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** What the user called it, e.g. "Cursor on laptop". Shown in lists and audit. */
+    name: text('name').notNull(),
+    /** Last characters of the token, so users can tell tokens apart. */
+    tokenHint: text('token_hint').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [index('pat_user_idx').on(t.userId)],
 );

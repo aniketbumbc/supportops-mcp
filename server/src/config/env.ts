@@ -72,6 +72,16 @@ const EnvSchema = z
       emptyAsUndefined,
       z.string().min(1).optional(),
     ),
+    /** How long a login (access) token lives. Users log in again after this. */
+    JWT_ACCESS_TTL_MINUTES: z.coerce
+      .number()
+      .int()
+      .min(5)
+      .max(24 * 60)
+      .default(8 * 60),
+    /** Personal access tokens: default and maximum lifetime in days. */
+    PAT_DEFAULT_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+    PAT_MAX_DAYS: z.coerce.number().int().min(1).max(365).default(90),
 
     /** Allowed clock difference between servers when checking exp / nbf. */
     JWT_CLOCK_TOLERANCE_SEC: z.coerce

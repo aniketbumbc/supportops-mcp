@@ -5,6 +5,8 @@ import { normalizeError } from '../errors/index.js';
 import { createRequestContext, resolveIdentity } from '../gateway/context';
 import type { Services } from '../services/index';
 import { registerTools } from '../tools/index';
+import { AuthError, wwwAuthenticate } from '../gateway/auth';
+import { getEffectivePolicy } from '../policy/role-policy-store';
 
 export const SERVER_INFO = {
   name: 'enterprise-crm-mcp',
@@ -51,19 +53,54 @@ export function registerMcpRoutes(
     try {
       ctx = createRequestContext(
         correlationId,
-        resolveIdentity(request.headers),
+        await resolveIdentity(request.headers),
       );
     } catch (error) {
+      if (error instanceof AuthError) {
+        request.log.warn(
+          { reason: error.reason },
+          'MCP request rejected: authentication',
+        );
+        return reply
+          .status(401)
+          .header('www-authenticate', wwwAuthenticate(error))
+          .header('x-request-id', correlationId)
+          .send(rpcError(-32001, error.message));
+      }
       const appError = normalizeError(error);
-      request.log.warn(
-        { code: appError.code },
+      request.log.error(
+        { err: error, code: appError.code },
         'MCP request rejected: identity',
       );
-      return reply.status(401).send(rpcError(-32001, appError.message));
+      return reply.status(500).send(rpcError(-32603, 'Internal server error'));
+    }
+
+    // What this caller may do. Fails closed: if permissions can't be loaded, no tools.
+    let policy;
+    try {
+      policy = await getEffectivePolicy(ctx.roles);
+    } catch (error) {
+      ctx.log.error(
+        { err: error },
+        'MCP request rejected: permissions unavailable',
+      );
+      return reply
+        .status(503)
+        .header('retry-after', '30')
+        .send(
+          rpcError(
+            -32002,
+            'Permissions are temporarily unavailable. Try again shortly.',
+          ),
+        );
     }
 
     const server = new McpServer(SERVER_INFO);
-    registerTools(server, { services: deps.services, ctx });
+    const visibleTools = registerTools(server, {
+      services: deps.services,
+      ctx,
+      policy,
+    });
 
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined, // stateless
@@ -87,6 +124,8 @@ export function registerMcpRoutes(
           ...describeRpc(request.body),
           status: reply.raw.statusCode,
           durationMs: Date.now() - started,
+          roles: ctx.roles,
+          visibleTools: visibleTools.length,
         },
         'MCP request',
       );

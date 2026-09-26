@@ -1,22 +1,26 @@
 import { randomUUID } from 'node:crypto';
 import type { Logger } from 'pino';
-import { env } from '../config/env';
-import { logger } from '../config/logger';
-import { AppError } from '../errors/index';
-import type { Role } from '../policy/roles';
+import { env } from '../config/env.js';
+import { logger } from '../config/logger.js';
+import type { Role } from '../policy/roles.js';
+import { authenticate } from './auth.js';
 
-/**
- * - What it is: a small object created once per tool call and passed through every layer.
-- What it carries: the caller's identity (user ID, tenant, roles), a correlation ID, and a logger pre-tagged with that ID.
-- Why identity matters: services use it for access decisions, such as masking emails for `support_agent`.
-- Why the ID matters: every log line, upstream call and error for a request shares it, so a single request can be traced end to end.
- */
+/** How the caller proved who they are. Recorded in logs and (Step 13) the audit log. */
+export interface AuthInfo {
+  /** 'dev' = AUTH_MODE=dev identity from .env; 'access' = login token; 'pat' = personal access token. */
+  method: 'dev' | 'access' | 'pat';
+  /** The token's jti (for PATs, the personal_access_tokens row id). Null in dev mode. */
+  tokenId: string | null;
+  /** PAT name, e.g. "Cursor on laptop". */
+  tokenName: string | null;
+}
 
-/** Who is calling. Comes from env in dev mode. */
+/** Who is calling. From .env in dev mode, from a verified token in jwt mode. */
 export interface Identity {
   userId: string;
   tenantId: string;
   roles: Role[];
+  auth: AuthInfo;
 }
 
 /** Everything a tool, service or adapter needs to know about the current call. */
@@ -42,22 +46,33 @@ export function resolveCorrelationId(
 }
 
 /**
- * Works out who is calling. Phase 2: the dev user from env.
+ * Works out who is calling.
+ * - jwt: verifies "Authorization: Bearer <token>" (login token or PAT). Throws
+ *   AuthError on anything wrong; the transport turns that into HTTP 401.
+ * - dev: the fixed identity from .env. Refused in production by env validation.
  */
-export function resolveIdentity(
-  _headers: Record<string, string | string[] | undefined>,
-): Identity {
+export async function resolveIdentity(
+  headers: Record<string, string | string[] | undefined>,
+): Promise<Identity> {
   if (env.AUTH_MODE === 'dev') {
     return {
       userId: env.DEV_USER_ID,
       tenantId: env.DEV_TENANT_ID,
       roles: env.DEV_ROLES,
+      auth: { method: 'dev', tokenId: null, tokenName: null },
     };
   }
-  throw new AppError(
-    'PERMISSION_DENIED',
-    'JWT authentication is not implemented yet',
-  );
+  const verified = await authenticate(headers.authorization);
+  return {
+    userId: verified.userId,
+    tenantId: verified.tenantId,
+    roles: verified.roles,
+    auth: {
+      method: verified.tokenType,
+      tokenId: verified.tokenId,
+      tokenName: verified.tokenName,
+    },
+  };
 }
 
 export function createRequestContext(
@@ -71,6 +86,8 @@ export function createRequestContext(
       correlationId,
       userId: identity.userId,
       tenantId: identity.tenantId,
+      authMethod: identity.auth.method,
+      ...(identity.auth.tokenName && { tokenName: identity.auth.tokenName }),
     }),
   };
 }
