@@ -36,7 +36,10 @@ async function check(fn: () => Promise<unknown>): Promise<CheckResult> {
 }
 
 export async function buildServer() {
+  //builds the CRM adapter, with
+  // its HTTP client pointed at the mock API (base URL, API key and timeout from env).
   const adapters = createAdapters();
+  //createServices(adapters) builds CustomerService, giving it the CRM adapter
   const services = createServices(adapters);
 
   const app = Fastify({

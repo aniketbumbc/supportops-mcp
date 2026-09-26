@@ -1,9 +1,15 @@
 import { z } from 'zod';
-import type { Customer, CustomerDetail, Page } from '../../domain/types.js';
-import { AppError } from '../../errors/index.js';
-import type { RequestContext } from '../../gateway/context.js';
-import type { HttpClient } from '../http-client.js';
-import type { CrmAdapter } from './crm-adapter.js';
+import type {
+  CUSTOMER_STATUSES,
+  CUSTOMER_TIERS,
+  type Customer,
+  type CustomerDetail,
+  type Page,
+} from '../../domain/type';
+import type { RequestContext } from '../../gateway/context';
+import type { HttpClient } from '../http-client';
+import type { CrmAdapter } from './crm-adapter';
+import { parseResponse } from '../parse-response';
 
 /**
  * The mock CRM's JSON, described with Zod. Parsing responses (not just typing them)
@@ -15,8 +21,8 @@ const MockCustomer = z.object({
   name: z.string(),
   primary_email: z.string(),
   phone: z.string().nullable(),
-  tier: z.enum(['standard', 'business', 'enterprise']),
-  status: z.enum(['active', 'suspended', 'churned']),
+  tier: z.enum(CUSTOMER_TIERS),
+  status: z.enum(CUSTOMER_STATUSES),
   region: z.string(),
   customer_since: z.string(),
 });
@@ -53,26 +59,6 @@ function toCustomer(c: z.infer<typeof MockCustomer>): Customer {
   };
 }
 
-function parseResponse<S extends z.ZodType>(
-  schema: S,
-  data: unknown,
-  ctx: RequestContext,
-  endpoint: string,
-): z.infer<S> {
-  const result = schema.safeParse(data);
-  if (!result.success) {
-    ctx.log.error(
-      { system: 'CRM', endpoint, issues: result.error.issues.slice(0, 5) },
-      'CRM response did not match the expected shape',
-    );
-    throw new AppError(
-      'INTERNAL_ERROR',
-      'Something went wrong while running this tool.',
-    );
-  }
-  return result.data;
-}
-
 export class MockCrmAdapter implements CrmAdapter {
   constructor(private readonly http: HttpClient) {}
 
@@ -85,12 +71,10 @@ export class MockCrmAdapter implements CrmAdapter {
       limit: params.limit,
       offset: params.offset,
     });
-    const page = parseResponse(
-      MockCustomerList,
-      raw,
-      ctx,
-      'GET /crm/v1/customers',
-    );
+    const page = parseResponse(MockCustomerList, raw, ctx, {
+      system: 'CRM',
+      endpoint: 'GET /crm/v1/customers',
+    });
     return {
       items: page.data.map(toCustomer),
       hasMore: page.has_more,
@@ -106,12 +90,10 @@ export class MockCrmAdapter implements CrmAdapter {
       `/crm/v1/customers/${encodeURIComponent(customerRef)}`,
       ctx,
     );
-    const c = parseResponse(
-      MockCustomerDetail,
-      raw,
-      ctx,
-      'GET /crm/v1/customers/:ref',
-    );
+    const c = parseResponse(MockCustomerDetail, raw, ctx, {
+      system: 'CRM',
+      endpoint: 'GET /crm/v1/customers/:ref',
+    });
     return {
       ...toCustomer(c),
       contacts: c.contacts.map((ct) => ({
