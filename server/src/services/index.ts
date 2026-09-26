@@ -8,6 +8,10 @@ export interface Services {
 /** Builds every service once at startup, wiring in the adapters they need. */
 export function createServices(adapters: Adapters): Services {
   return {
-    customers: new CustomerService(adapters.crm),
+    customers: new CustomerService(
+      adapters.crm,
+      adapters.billing,
+      adapters.ticketing,
+    ),
   };
 }
