@@ -1,11 +1,6 @@
 import { z } from 'zod';
-import type {
-  CUSTOMER_STATUSES,
-  CUSTOMER_TIERS,
-  type Customer,
-  type CustomerDetail,
-  type Page,
-} from '../../domain/type';
+import type { Customer, CustomerDetail, Page } from '../../domain/type';
+import { CUSTOMER_TIERS, CUSTOMER_STATUSES } from '../../domain/type';
 import type { RequestContext } from '../../gateway/context';
 import type { HttpClient } from '../http-client';
 import type { CrmAdapter } from './crm-adapter';
