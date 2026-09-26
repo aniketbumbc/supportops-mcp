@@ -18,6 +18,7 @@ import { resolveCorrelationId } from './gateway/context';
 import { createServices } from './services/index';
 import { TOOL_REGISTRY } from './tools/index';
 import { registerMcpRoutes, SERVER_INFO } from './transport/mcp';
+import { getJwtKeys } from './gateway/keys';
 
 type CheckResult = { ok: boolean; latencyMs: number; error?: string };
 
@@ -36,6 +37,17 @@ async function check(fn: () => Promise<unknown>): Promise<CheckResult> {
 }
 
 export async function buildServer() {
+  if (env.AUTH_MODE === 'jwt') {
+    const { info, signing } = await getJwtKeys();
+    logger.info(
+      {
+        ...info,
+        signingKid: signing?.kid ?? null,
+        signingAlg: signing?.alg ?? null,
+      },
+      'JWT keys loaded',
+    );
+  }
   //builds the CRM adapter, with
   // its HTTP client pointed at the mock API (base URL, API key and timeout from env).
   const adapters = createAdapters();

@@ -7,3 +7,5 @@ README.md
 .env.example
 TODO.md
 src/db/migrations/
+# Local dev signing keys (never commit)
+.keys/
