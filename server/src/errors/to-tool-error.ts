@@ -1,4 +1,4 @@
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { Logger } from 'pino';
 import { ZodError } from 'zod';
 import { AppError } from './app-error.js';

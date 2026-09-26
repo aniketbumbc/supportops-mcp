@@ -1,6 +1,18 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ToolName } from '../policy/tool-names';
 import { FIND_CUSTOMER, registerFindCustomer } from './find-customer';
+import {
+  GET_CUSTOMER_ACCOUNT,
+  registerGetCustomerAccount,
+} from './get-customer-account';
+import {
+  GET_CUSTOMER_INVOICES,
+  registerGetCustomerInvoices,
+} from './get-customer-invoices';
+import {
+  SEARCH_CUSTOMER_TICKETS,
+  registerSearchCustomerTickets,
+} from './search-customer-tickets';
 import type { ToolDeps } from './types';
 
 interface ToolEntry {
@@ -15,6 +27,9 @@ interface ToolEntry {
  */
 export const TOOL_REGISTRY: ToolEntry[] = [
   { name: FIND_CUSTOMER, register: registerFindCustomer },
+  { name: GET_CUSTOMER_ACCOUNT, register: registerGetCustomerAccount },
+  { name: GET_CUSTOMER_INVOICES, register: registerGetCustomerInvoices },
+  { name: SEARCH_CUSTOMER_TICKETS, register: registerSearchCustomerTickets },
 ];
 
 /**
