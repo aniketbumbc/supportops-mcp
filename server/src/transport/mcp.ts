@@ -84,16 +84,7 @@ export function registerMcpRoutes(
       return sendRateLimited(reply, ipLimit, correlationId);
     }
 
-    // 2. Per-user limit, now that we know who is calling.
-    const userLimit = await consume([MCP_LIMITS.perUser], `user:${ctx.userId}`);
-    if (!userLimit.allowed) {
-      ctx.log.warn(
-        { rule: userLimit.blockedBy?.name },
-        'MCP rate limited (user)',
-      );
-      return sendRateLimited(reply, userLimit, correlationId);
-    }
-
+    // 2. Who is calling.
     let ctx;
     try {
       ctx = createRequestContext(
@@ -118,6 +109,16 @@ export function registerMcpRoutes(
         'MCP request rejected: identity',
       );
       return reply.status(500).send(rpcError(-32603, 'Internal server error'));
+    }
+
+    // 3. Per-user limit, now that we know who is calling.
+    const userLimit = await consume([MCP_LIMITS.perUser], `user:${ctx.userId}`);
+    if (!userLimit.allowed) {
+      ctx.log.warn(
+        { rule: userLimit.blockedBy?.name },
+        'MCP rate limited (user)',
+      );
+      return sendRateLimited(reply, userLimit, correlationId);
     }
 
     // What this caller may do. Fails closed: if permissions can't be loaded, no tools.
