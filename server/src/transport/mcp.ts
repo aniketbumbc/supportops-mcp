@@ -7,6 +7,12 @@ import type { Services } from '../services/index';
 import { registerTools } from '../tools/index';
 import { AuthError, wwwAuthenticate } from '../gateway/auth';
 import { getEffectivePolicy } from '../policy/role-policy-store';
+import {
+  consume,
+  rateLimitHeaders,
+  type RateLimitResult,
+} from '../gateway/rate-limiter';
+import { MCP_LIMITS } from '../policy/rate-limits';
 
 export const SERVER_INFO = {
   name: 'enterprise-crm-mcp',
@@ -30,6 +36,24 @@ function describeRpc(body: unknown): { rpcMethod?: string; tool?: string } {
   };
 }
 
+/** Refuses a rate-limited request with 429, Retry-After and RateLimit-* headers. */
+function sendRateLimited(
+  reply: FastifyReply,
+  result: RateLimitResult,
+  correlationId: string,
+) {
+  return reply
+    .status(429)
+    .headers(rateLimitHeaders(result))
+    .header('x-request-id', correlationId)
+    .send(
+      rpcError(
+        -32029,
+        `Rate limit exceeded. Try again in ${result.retryAfterSec} seconds.`,
+      ),
+    );
+}
+
 /**
  * MCP over Streamable HTTP, STATELESS mode.
  *
@@ -48,6 +72,27 @@ export function registerMcpRoutes(
 ): void {
   app.post('/mcp', async (request: FastifyRequest, reply: FastifyReply) => {
     const correlationId = request.id;
+
+    // 1. Per-IP limit BEFORE any token work: junk floods and token guessing are
+    //    refused cheaply, without signature checks or database lookups.
+    const ipLimit = await consume([MCP_LIMITS.perIp], `ip:${request.ip}`);
+    if (!ipLimit.allowed) {
+      request.log.warn(
+        { ip: request.ip, rule: ipLimit.blockedBy?.name },
+        'MCP rate limited (IP)',
+      );
+      return sendRateLimited(reply, ipLimit, correlationId);
+    }
+
+    // 2. Per-user limit, now that we know who is calling.
+    const userLimit = await consume([MCP_LIMITS.perUser], `user:${ctx.userId}`);
+    if (!userLimit.allowed) {
+      ctx.log.warn(
+        { rule: userLimit.blockedBy?.name },
+        'MCP rate limited (user)',
+      );
+      return sendRateLimited(reply, userLimit, correlationId);
+    }
 
     let ctx;
     try {
@@ -110,6 +155,9 @@ export function registerMcpRoutes(
     // The SDK writes directly to Node's response, so Fastify must step aside.
     reply.hijack();
     reply.raw.setHeader('x-request-id', correlationId);
+    for (const [name, value] of Object.entries(rateLimitHeaders(userLimit))) {
+      reply.raw.setHeader(name, value);
+    }
     reply.raw.on('close', () => {
       void transport.close();
       void server.close();

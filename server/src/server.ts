@@ -20,6 +20,7 @@ import { TOOL_REGISTRY } from './tools/index';
 import { registerMcpRoutes, SERVER_INFO } from './transport/mcp';
 import { getJwtKeys } from './gateway/keys';
 import { authRoutes } from './transport/auth-routes';
+import { closeRedis, getRedis } from './infra/redis';
 
 type CheckResult = { ok: boolean; latencyMs: number; error?: string };
 
@@ -49,6 +50,9 @@ export async function buildServer() {
       'JWT keys loaded',
     );
   }
+  const redis = getRedis();
+  await redis.ping();
+  logger.info({ redis: 'connected' }, 'Redis connected');
   //builds the CRM adapter, with
   // its HTTP client pointed at the mock API (base URL, API key and timeout from env).
   const adapters = createAdapters();
@@ -71,7 +75,7 @@ export async function buildServer() {
 
   // Liveness + dependencies. 200 when everything is reachable, 503 otherwise.
   app.get('/health', async (_request: FastifyRequest, reply: FastifyReply) => {
-    const [database, mockSystems] = await Promise.all([
+    const [database, mockSystems, redisCheck] = await Promise.all([
       check(() => sql`select 1`),
       check(async () => {
         const res = await fetch(`${env.MOCK_SYSTEMS_BASE_URL}/health`, {
@@ -79,13 +83,14 @@ export async function buildServer() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
       }),
+      check(() => getRedis().ping()),
     ]);
-    const healthy = database.ok && mockSystems.ok;
+    const healthy = database.ok && mockSystems.ok && redisCheck.ok;
     return reply.status(healthy ? 200 : 503).send({
       status: healthy ? 'ok' : 'degraded',
       service: SERVER_INFO.name,
       version: SERVER_INFO.version,
-      checks: { database, mockSystems },
+      checks: { database, mockSystems, redis: redisCheck },
     });
   });
 
@@ -104,6 +109,7 @@ async function main() {
     app.log.info({ signal }, 'Shutting down');
     await app.close();
     await closeDb();
+    await closeRedis();
     process.exit(0);
   };
   process.on('SIGINT', () => void shutdown('SIGINT'));

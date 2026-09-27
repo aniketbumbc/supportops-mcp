@@ -9,6 +9,7 @@ import type {
 } from '@modelcontextprotocol/sdk/types.js';
 import { recordToolCall, type AuditOutcome } from '../audit/audit-writer';
 import {
+  AppError,
   Errors,
   normalizeError,
   toToolError,
@@ -18,6 +19,8 @@ import { canUseTool } from '../policy/role-policy-store';
 import type { ToolName } from '../policy/tool-names';
 import { toolSuccess } from './helper';
 import type { ToolDeps } from './types';
+import { consume } from '../gateway/rate-limiter';
+import { TOOL_LIMITS } from '../policy/rate-limits';
 
 /**
  * Every tool is built with defineTool(). A tool only describes itself and runs its
@@ -26,6 +29,15 @@ import type { ToolDeps } from './types';
  *   2. timing
  *   3. one audit row: success, denied, error or rate_limited
  *   4. error mapping to the standard tool-error format
+ */
+
+/**
+ *  *   1. permission check (defence in depth, on top of role-filtered registration)
+ *   2. per-user, per-tool rate limit (from TOOL_LIMITS)
+ *   3. timing
+ *   4. one audit row: success, denied, error or rate_limited
+ *   5. error mapping to the standard tool-error format
+ *
  */
 
 /** What a tool handler returns on success. */
@@ -82,6 +94,26 @@ export function defineTool<
       // and gives denials an audit row.
       if (!canUseTool(policy, def.name)) {
         throw Errors.permissionDenied(`Your role does not allow ${def.name}.`);
+      }
+      // Per-user, per-tool limit. Checked after permissions so denied calls cost nothing.
+      const limit = await consume(
+        TOOL_LIMITS[def.name],
+        `user:${ctx.userId}:tool:${def.name}`,
+      );
+      if (!limit.allowed) {
+        const rule = limit.blockedBy!;
+        throw new AppError(
+          'RATE_LIMITED',
+          `Too many ${def.name} calls. Try again in ${limit.retryAfterSec} seconds.`,
+          {
+            retryAfterSeconds: limit.retryAfterSec,
+            details: {
+              rule: rule.name,
+              limit: rule.limit,
+              window_seconds: rule.windowSec,
+            },
+          },
+        );
       }
 
       const result = await def.handler(args, deps);

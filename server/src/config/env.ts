@@ -92,6 +92,14 @@ const EnvSchema = z
       .default(30),
     /** Public URL of this MCP endpoint, published in OAuth discovery metadata. */
     MCP_RESOURCE_URL: z.url().default('http://localhost:4000/mcp'),
+    /** Prefix for every Redis key, so dev/test/prod (or several apps) can share one Redis safely. */
+    REDIS_KEY_PREFIX: z
+      .string()
+      .regex(
+        /^[a-z0-9:_-]+:$/,
+        'REDIS_KEY_PREFIX must end with ":" (e.g. crm:dev:)',
+      )
+      .optional(),
 
     MOCK_SYSTEMS_PORT: z.coerce.number().int().positive().default(4100),
     MOCK_SYSTEMS_API_KEY: z

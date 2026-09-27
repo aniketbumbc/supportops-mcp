@@ -9,15 +9,16 @@ import { AppError, type ErrorCode } from '../errors/index';
 import {
   authenticate,
   AuthError,
-  type VerifiedIdentity,
   wwwAuthenticate,
+  type VerifiedIdentity,
 } from '../gateway/auth';
 import {
-  clearFailures,
-  LOGIN_RULES,
-  recordFailure,
-  retryAfterSeconds,
-} from '../services/login-throttle';
+  clearLoginFailures,
+  loginRetryAfter,
+  recordLoginFailure,
+} from '../gateway/login-throttle';
+import { consume, rateLimitHeaders } from '../gateway/rate-limiter';
+import { AUTH_LIMITS } from '../policy/rate-limits';
 import type { PatSummary } from '../services/auth-service';
 import type { Services } from '../services/index';
 
@@ -76,13 +77,10 @@ export async function authRoutes(
   const { auth } = deps.services;
 
   // Tokens must never be cached by browsers or proxies.
-  app.addHook(
-    'onSend',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      reply.header('cache-control', 'no-store');
-      reply.header('pragma', 'no-cache');
-    },
-  );
+  app.addHook('onSend', async (_request, reply) => {
+    reply.header('cache-control', 'no-store');
+    reply.header('pragma', 'no-cache');
+  });
 
   // One error format for all auth routes: { error: { code, message } }.
   app.setErrorHandler(
@@ -144,13 +142,8 @@ export async function authRoutes(
     async (request: FastifyRequest, reply: FastifyReply) => {
       const body = LoginBody.parse(request.body);
       const email = body.email.trim().toLowerCase();
-      const emailKey = `login:${request.ip}:${email}`;
-      const ipKey = `login-ip:${request.ip}`;
 
-      const wait = Math.max(
-        retryAfterSeconds(emailKey, LOGIN_RULES.perEmailAndIp),
-        retryAfterSeconds(ipKey, LOGIN_RULES.perIp),
-      );
+      const wait = await loginRetryAfter(request.ip, email);
       if (wait > 0) {
         request.log.warn({ ip: request.ip }, 'Login throttled');
         throw new AppError(
@@ -164,7 +157,7 @@ export async function authRoutes(
 
       try {
         const result = await auth.login({ email, password: body.password });
-        clearFailures(emailKey);
+        await clearLoginFailures(request.ip, email);
         return reply.send({
           access_token: result.accessToken,
           token_type: 'Bearer',
@@ -178,35 +171,49 @@ export async function authRoutes(
           },
         });
       } catch (error) {
-        if (error instanceof AuthError) {
-          recordFailure(emailKey, LOGIN_RULES.perEmailAndIp);
-          recordFailure(ipKey, LOGIN_RULES.perIp);
-        }
+        if (error instanceof AuthError)
+          await recordLoginFailure(request.ip, email);
         throw error;
       }
     },
   );
 
   // ─── Me ───────────────────────────────────────────────
-  app.get('/auth/me', { preHandler: requireAuth }, async (request) => {
-    const me = await auth.me(request.identity!);
-    return {
-      id: me.id,
-      email: me.email,
-      display_name: me.displayName,
-      roles: me.roles,
-      tenant_id: me.tenantId,
-      token_type: me.tokenType,
-      token_name: me.tokenName,
-    };
-  });
+  app.get(
+    '/auth/me',
+    { preHandler: requireAuth },
+    async (request: FastifyRequest) => {
+      const me = await auth.me(request.identity!);
+      return {
+        id: me.id,
+        email: me.email,
+        display_name: me.displayName,
+        roles: me.roles,
+        tenant_id: me.tenantId,
+        token_type: me.tokenType,
+        token_name: me.tokenName,
+      };
+    },
+  );
 
   // ─── Personal access tokens ───────────────────────────
   app.post(
     '/auth/tokens',
     { preHandler: requireAuth },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    async (request, reply) => {
       const body = CreatePatBody.parse(request.body);
+      const limit = await consume(
+        [AUTH_LIMITS.patCreatePerUser],
+        `user:${request.identity!.userId}`,
+      );
+      if (!limit.allowed) {
+        reply.headers(rateLimitHeaders(limit));
+        throw new AppError(
+          'RATE_LIMITED',
+          `Too many tokens created. Try again in ${limit.retryAfterSec} seconds.`,
+          { retryAfterSeconds: limit.retryAfterSec },
+        );
+      }
       const pat = await auth.createPat(request.identity!, {
         name: body.name,
         expiresInDays: body.expires_in_days,
@@ -230,7 +237,7 @@ export async function authRoutes(
   app.delete<{ Params: { id: string } }>(
     '/auth/tokens/:id',
     { preHandler: requireAuth },
-    async (request: FastifyRequest) =>
+    async (request) =>
       toPatJson(await auth.revokePat(request.identity!, request.params.id)),
   );
 }
