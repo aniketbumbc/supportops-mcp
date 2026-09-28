@@ -14,11 +14,27 @@ import {
 import type { RequestContext } from '../../gateway/context';
 import type { HttpClient } from '../http-client';
 import { parseResponse } from '../parse-response';
-import type { BillingAdapter, ListInvoicesParams } from './billing-adapter';
+import type {
+  BillingAdapter,
+  CreatedRefund,
+  CreateRefundInput,
+  ListInvoicesParams,
+} from './billing-adapter';
 
 const SYSTEM = 'Billing';
 
 // ─── The mock billing API's JSON, described with Zod ─────
+
+const MockCreatedRefund = z.object({
+  refund_ref: z.string(),
+  payment_ref: z.string(),
+  invoice_number: z.string(),
+  amount_minor: z.number().int(),
+  currency: z.string(),
+  reason: z.string(),
+  status: z.enum(REFUND_STATUSES),
+  created_at: z.string(),
+});
 
 const MockSubscription = z.object({
   subscription_ref: z.string(),
@@ -157,6 +173,38 @@ export class MockBillingAdapter implements BillingAdapter {
       })),
       hasMore: page.has_more,
       nextOffset: page.next_offset,
+    };
+  }
+
+  async createRefund(
+    ctx: RequestContext,
+    input: CreateRefundInput,
+    idempotencyKey: string,
+  ): Promise<CreatedRefund> {
+    const raw = await this.http.post(
+      '/billing/v1/refunds',
+      ctx,
+      {
+        payment_ref: input.paymentRef,
+        amount_minor: input.amountMinor,
+        reason: input.reason,
+        metadata: input.metadata,
+      },
+      idempotencyKey,
+    );
+    const r = parseResponse(MockCreatedRefund, raw, ctx, {
+      system: SYSTEM,
+      endpoint: 'POST /billing/v1/refunds',
+    });
+    return {
+      refundRef: r.refund_ref,
+      paymentRef: r.payment_ref,
+      invoiceNumber: r.invoice_number,
+      amountMinor: r.amount_minor,
+      currency: r.currency,
+      reason: r.reason,
+      status: r.status,
+      createdAt: r.created_at,
     };
   }
 

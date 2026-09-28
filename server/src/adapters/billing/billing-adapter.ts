@@ -3,6 +3,7 @@ import type {
   InvoiceStatus,
   InvoiceSummary,
   Page,
+  Refund,
   Subscription,
 } from '../../domain/type';
 import type { RequestContext } from '../../gateway/context';
@@ -18,10 +19,21 @@ export interface ListInvoicesParams {
   offset?: number;
 }
 
+export interface CreateRefundInput {
+  paymentRef: string;
+  amountMinor: number;
+  reason: string;
+  /** Extra context stored with the refund at the provider (who, why, which approval). */
+  metadata: Record<string, string | number | boolean | null>;
+}
+
+export interface CreatedRefund extends Refund {
+  invoiceNumber: string;
+}
+
 /**
  * What the rest of the system needs from a billing / payments system.
  * The mock today; Stripe, Razorpay or Chargebee later.
- * Refund creation is added in Phase 6 with issue_refund.
  */
 export interface BillingAdapter {
   /** Throws NOT_FOUND if the customer does not exist. */
@@ -41,4 +53,15 @@ export interface BillingAdapter {
     ctx: RequestContext,
     invoiceNumber: string,
   ): Promise<InvoiceDetail>;
+
+  /**
+   * Refunds part or all of one payment. Idempotent at the provider: the same key
+   * returns the original refund instead of refunding twice. Throws CONFLICT if the
+   * amount exceeds what is refundable on that payment or the payment isn't refundable.
+   */
+  createRefund(
+    ctx: RequestContext,
+    input: CreateRefundInput,
+    idempotencyKey: string,
+  ): Promise<CreatedRefund>;
 }

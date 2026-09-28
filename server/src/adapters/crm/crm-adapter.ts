@@ -1,10 +1,34 @@
-import type { Customer, CustomerDetail, Page } from '../../domain/type';
+import type {
+  Customer,
+  CustomerDetail,
+  CustomerStatus,
+  CustomerTier,
+  Page,
+} from '../../domain/type';
 import type { RequestContext } from '../../gateway/context';
+
+export interface CreateCustomerInput {
+  name: string;
+  primaryEmail: string;
+  phone?: string;
+  tier: CustomerTier;
+  region: string;
+  primaryContact: { name: string; email: string; phone?: string; role: string };
+}
+
+/** Only the fields given are changed. phone: null clears it. */
+export interface CustomerPatch {
+  name?: string;
+  primaryEmail?: string;
+  phone?: string | null;
+  tier?: CustomerTier;
+  status?: CustomerStatus;
+  region?: string;
+}
 
 /**
  * What the rest of the system needs from a CRM. Any CRM (the mock today,
  * HubSpot or Salesforce later) plugs in by implementing this interface.
- * Create/update methods are added in Phase 6 with the write tools.
  */
 export interface CrmAdapter {
   searchCustomers(
@@ -17,4 +41,17 @@ export interface CrmAdapter {
     ctx: RequestContext,
     customerRef: string,
   ): Promise<CustomerDetail>;
+
+  /** Throws CONFLICT if the email is already used by another customer. */
+  createCustomer(
+    ctx: RequestContext,
+    input: CreateCustomerInput,
+  ): Promise<CustomerDetail>;
+
+  /** Throws NOT_FOUND / CONFLICT. Returns the customer and a readable list of changes. */
+  updateCustomer(
+    ctx: RequestContext,
+    customerRef: string,
+    patch: CustomerPatch,
+  ): Promise<{ customer: CustomerDetail; changesApplied: string[] }>;
 }

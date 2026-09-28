@@ -1,10 +1,19 @@
 import { z } from 'zod';
-import type { Customer, CustomerDetail, Page } from '../../domain/type';
-import { CUSTOMER_TIERS, CUSTOMER_STATUSES } from '../../domain/type';
+import {
+  CUSTOMER_STATUSES,
+  CUSTOMER_TIERS,
+  type Customer,
+  type CustomerDetail,
+  type Page,
+} from '../../domain/type';
 import type { RequestContext } from '../../gateway/context';
 import type { HttpClient } from '../http-client';
-import type { CrmAdapter } from './crm-adapter';
 import { parseResponse } from '../parse-response';
+import type {
+  CreateCustomerInput,
+  CrmAdapter,
+  CustomerPatch,
+} from './crm-adapter';
 
 /**
  * The mock CRM's JSON, described with Zod. Parsing responses (not just typing them)
@@ -39,6 +48,9 @@ const MockCustomerList = z.object({
 const MockCustomerDetail = MockCustomer.extend({
   contacts: z.array(MockContact),
 });
+const MockCustomerUpdate = MockCustomerDetail.extend({
+  changes_applied: z.array(z.string()),
+});
 
 /** Vendor JSON → our domain type. The only place that knows both shapes. */
 function toCustomer(c: z.infer<typeof MockCustomer>): Customer {
@@ -51,6 +63,19 @@ function toCustomer(c: z.infer<typeof MockCustomer>): Customer {
     status: c.status,
     region: c.region,
     customerSince: c.customer_since,
+  };
+}
+
+function toDetail(c: z.infer<typeof MockCustomerDetail>): CustomerDetail {
+  return {
+    ...toCustomer(c),
+    contacts: c.contacts.map((ct) => ({
+      name: ct.name,
+      email: ct.email,
+      phone: ct.phone,
+      role: ct.role,
+      isPrimary: ct.is_primary,
+    })),
   };
 }
 
@@ -85,19 +110,62 @@ export class MockCrmAdapter implements CrmAdapter {
       `/crm/v1/customers/${encodeURIComponent(customerRef)}`,
       ctx,
     );
-    const c = parseResponse(MockCustomerDetail, raw, ctx, {
-      system: 'CRM',
-      endpoint: 'GET /crm/v1/customers/:ref',
+    return toDetail(
+      parseResponse(MockCustomerDetail, raw, ctx, {
+        system: 'CRM',
+        endpoint: 'GET /crm/v1/customers/:ref',
+      }),
+    );
+  }
+
+  async createCustomer(
+    ctx: RequestContext,
+    input: CreateCustomerInput,
+  ): Promise<CustomerDetail> {
+    const raw = await this.http.post('/crm/v1/customers', ctx, {
+      name: input.name,
+      primary_email: input.primaryEmail,
+      phone: input.phone,
+      tier: input.tier,
+      region: input.region,
+      primary_contact: {
+        name: input.primaryContact.name,
+        email: input.primaryContact.email,
+        phone: input.primaryContact.phone,
+        role: input.primaryContact.role,
+      },
+      created_by: ctx.userId,
     });
-    return {
-      ...toCustomer(c),
-      contacts: c.contacts.map((ct) => ({
-        name: ct.name,
-        email: ct.email,
-        phone: ct.phone,
-        role: ct.role,
-        isPrimary: ct.is_primary,
-      })),
-    };
+    return toDetail(
+      parseResponse(MockCustomerDetail, raw, ctx, {
+        system: 'CRM',
+        endpoint: 'POST /crm/v1/customers',
+      }),
+    );
+  }
+
+  async updateCustomer(
+    ctx: RequestContext,
+    customerRef: string,
+    patch: CustomerPatch,
+  ): Promise<{ customer: CustomerDetail; changesApplied: string[] }> {
+    const raw = await this.http.patch(
+      `/crm/v1/customers/${encodeURIComponent(customerRef)}`,
+      ctx,
+      {
+        name: patch.name,
+        primary_email: patch.primaryEmail,
+        phone: patch.phone,
+        tier: patch.tier,
+        status: patch.status,
+        region: patch.region,
+        updated_by: ctx.userId,
+      },
+    );
+    const c = parseResponse(MockCustomerUpdate, raw, ctx, {
+      system: 'CRM',
+      endpoint: 'PATCH /crm/v1/customers/:ref',
+    });
+    return { customer: toDetail(c), changesApplied: c.changes_applied };
   }
 }
