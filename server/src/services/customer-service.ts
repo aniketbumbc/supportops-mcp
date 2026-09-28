@@ -1,10 +1,18 @@
-import type { CrmAdapter } from '../adapters/crm/crm-adapter';
+import type { CrmAdapter, CustomerPatch } from '../adapters/crm/crm-adapter';
 import type { BillingAdapter } from '../adapters/billing/billing-adapter';
 import type { TicketingAdapter } from '../adapters/ticketing/ticketing-adapter';
-import type { Customer, CustomerDetail } from '../domain/type';
+import type {
+  BillingCycle,
+  Customer,
+  CustomerDetail,
+  CustomerStatus,
+  CustomerTier,
+  SubscriptionStatus,
+} from '../domain/type';
 import { assertRef } from '../domain/refs';
 import { Errors, AppError } from '../errors/index';
 import { hasRole, type RequestContext } from '../gateway/context';
+import { peekIdempotent, withIdempotency } from '../gateway/idempotency';
 
 export const SUBSCRIPTION_STATUSES = [
   'trialing',
@@ -14,6 +22,117 @@ export const SUBSCRIPTION_STATUSES = [
 ] as const;
 
 export const BILLING_CYCLES = ['monthly', 'annual'] as const;
+// ─── Customer writes: helpers ────────────────────────────
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Free email providers: a shared domain there says nothing about being the same company. */
+const FREE_EMAIL_DOMAINS = new Set([
+  'gmail.com',
+  'yahoo.com',
+  'outlook.com',
+  'hotmail.com',
+  'icloud.com',
+  'proton.me',
+  'rediffmail.com',
+]);
+
+/** Words that don't distinguish companies: "Acme Traders Pvt Ltd" ≈ "Acme Traders". */
+const NAME_NOISE = new Set([
+  'the',
+  'pvt',
+  'private',
+  'ltd',
+  'limited',
+  'llp',
+  'inc',
+  'co',
+  'company',
+  'corp',
+  'corporation',
+  'and',
+]);
+
+function nameTokens(name: string): string[] {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((t) => t && !NAME_NOISE.has(t));
+}
+
+const emailDomain = (email: string) => email.split('@')[1]?.toLowerCase() ?? '';
+
+/** Why an existing customer might be the same as the new one, or null if it isn't. */
+function duplicateReason(
+  candidate: Customer,
+  newName: string,
+  newEmail: string,
+): string | null {
+  const a = nameTokens(newName).join(' ');
+  const b = nameTokens(candidate.name).join(' ');
+  if (a && a === b) return 'same name';
+  if (a && b && (a.startsWith(`${b} `) || b.startsWith(`${a} `)))
+    return 'similar name';
+  const domain = emailDomain(newEmail);
+  if (
+    domain &&
+    !FREE_EMAIL_DOMAINS.has(domain) &&
+    emailDomain(candidate.primaryEmail) === domain
+  ) {
+    return 'same email domain';
+  }
+  return null;
+}
+
+/** Field rules shared by create and update. */
+function checkLength(
+  value: string,
+  field: string,
+  min: number,
+  max: number,
+): string {
+  const v = value.trim();
+  if (v.length < min || v.length > max) {
+    throw Errors.validation(`${field} must be ${min} to ${max} characters`, {
+      field,
+    });
+  }
+  return v;
+}
+
+function checkEmail(value: string, field: string): string {
+  const v = value.trim().toLowerCase();
+  if (!EMAIL.test(v) || v.length > 254) {
+    throw Errors.validation(`${field} must be a valid email address`, {
+      field,
+    });
+  }
+  return v;
+}
+
+/** Fields a support_agent may change. Tier and status need a lead or admin. */
+const AGENT_EDITABLE = new Set(['name', 'primaryEmail', 'phone', 'region']);
+
+export interface PossibleDuplicate {
+  customerRef: string;
+  name: string;
+  primaryEmail: string;
+  reason: string;
+}
+
+export type CreateCustomerResult =
+  | { status: 'created'; customer: CustomerDetail; replayed: boolean }
+  | {
+      status: 'possible_duplicates_found';
+      possibleDuplicates: PossibleDuplicate[];
+    };
+
+export interface UpdateCustomerResult {
+  customer: CustomerDetail;
+  changesApplied: string[];
+  replayed: boolean;
+}
 
 /** A search hit, shaped for the AI: just enough to pick the right customer. */
 export interface CustomerMatch {
@@ -254,5 +373,196 @@ export class CustomerService {
           : null,
       unavailableSections: [...unavailable],
     };
+  }
+  /**
+   * Creates a customer after a duplicate check. Similar existing customers are
+   * returned instead of creating, unless the user has confirmed it's a new one
+   * (confirmNotDuplicate). The same email as an existing customer is always refused.
+   */
+  async createCustomer(
+    ctx: RequestContext,
+    input: {
+      name: string;
+      primaryEmail: string;
+      phone?: string;
+      tier?: CustomerTier;
+      region: string;
+      contactName: string;
+      contactEmail: string;
+      contactRole: string;
+      confirmNotDuplicate?: boolean;
+    },
+  ): Promise<CreateCustomerResult> {
+    const name = checkLength(input.name, 'name', 2, 150);
+    const primaryEmail = checkEmail(input.primaryEmail, 'primary_email');
+    const phone =
+      input.phone !== undefined
+        ? checkLength(input.phone, 'phone', 6, 30)
+        : undefined;
+    const region = checkLength(input.region, 'region', 2, 50);
+    const contact = {
+      name: checkLength(input.contactName, 'contact_name', 2, 100),
+      email: checkEmail(input.contactEmail, 'contact_email'),
+      role: checkLength(input.contactRole, 'contact_role', 2, 100),
+    };
+    const tier = input.tier ?? 'standard';
+    const args = { name, primaryEmail, phone, tier, region, contact };
+
+    // A retry of a create that already succeeded: return it. (Otherwise the duplicate
+    // check below would find the customer the first attempt created.)
+    const earlier = await peekIdempotent<CustomerDetail>(
+      ctx,
+      'create_customer',
+      args,
+    );
+    if (earlier)
+      return { status: 'created', customer: earlier, replayed: true };
+
+    // Duplicate check: search by the distinctive part of the name and by email domain.
+    if (!input.confirmNotDuplicate) {
+      const queries = new Set<string>();
+      const tokens = nameTokens(name);
+      if (tokens[0] && tokens[0].length >= 2)
+        queries.add(tokens.slice(0, 2).join(' '));
+      const domain = emailDomain(primaryEmail);
+      if (domain && !FREE_EMAIL_DOMAINS.has(domain)) queries.add(domain);
+
+      const pages = await Promise.all(
+        [...queries].map((query) =>
+          this.crm.searchCustomers(ctx, { query, limit: 10 }),
+        ),
+      );
+      const seen = new Map<string, PossibleDuplicate>();
+      const showFullEmail = canSeeFullContactDetails(ctx);
+      for (const candidate of pages.flatMap((p) => p.items)) {
+        if (candidate.primaryEmail.toLowerCase() === primaryEmail) {
+          throw Errors.conflict(
+            `A customer with this email already exists: ${candidate.customerRef}.`,
+            { existing_customer_ref: candidate.customerRef },
+          );
+        }
+        const reason = duplicateReason(candidate, name, primaryEmail);
+        if (reason && !seen.has(candidate.customerRef)) {
+          seen.set(candidate.customerRef, {
+            customerRef: candidate.customerRef,
+            name: candidate.name,
+            primaryEmail: showFullEmail
+              ? candidate.primaryEmail
+              : maskEmail(candidate.primaryEmail),
+            reason,
+          });
+        }
+      }
+      if (seen.size > 0) {
+        return {
+          status: 'possible_duplicates_found',
+          possibleDuplicates: [...seen.values()],
+        };
+      }
+    }
+
+    const { result, replayed } = await withIdempotency(
+      ctx,
+      'create_customer',
+      args,
+      () =>
+        this.crm.createCustomer(ctx, {
+          name,
+          primaryEmail,
+          phone,
+          tier,
+          region,
+          primaryContact: contact,
+        }),
+    );
+    return { status: 'created', customer: result, replayed };
+  }
+
+  /**
+   * Updates a customer. support_agent may change contact fields only (name, email,
+   * phone, region); tier and status need a lead or admin. A status change needs a
+   * reason, which is kept in the audit trail with the call's arguments.
+   */
+  async updateCustomer(
+    ctx: RequestContext,
+    input: {
+      customerRef: string;
+      name?: string;
+      primaryEmail?: string;
+      phone?: string | null;
+      region?: string;
+      tier?: CustomerTier;
+      status?: CustomerStatus;
+      reason?: string;
+    },
+  ): Promise<UpdateCustomerResult> {
+    const customerRef = assertRef(
+      'customer',
+      input.customerRef,
+      'customer_ref',
+    );
+
+    const patch: CustomerPatch = {};
+    if (input.name !== undefined)
+      patch.name = checkLength(input.name, 'name', 2, 150);
+    if (input.primaryEmail !== undefined) {
+      patch.primaryEmail = checkEmail(input.primaryEmail, 'primary_email');
+    }
+    if (input.phone !== undefined) {
+      patch.phone =
+        input.phone === null ? null : checkLength(input.phone, 'phone', 6, 30);
+    }
+    if (input.region !== undefined)
+      patch.region = checkLength(input.region, 'region', 2, 50);
+    if (input.tier !== undefined) patch.tier = input.tier;
+    if (input.status !== undefined) patch.status = input.status;
+
+    const fields = Object.keys(patch);
+    if (fields.length === 0) {
+      throw Errors.validation('Provide at least one field to change');
+    }
+
+    // Field-level permission: agents may only edit contact details.
+    const restricted = fields.filter((f) => !AGENT_EDITABLE.has(f));
+    if (restricted.length > 0 && !hasRole(ctx, 'support_lead', 'admin')) {
+      throw Errors.permissionDenied(
+        `Only support leads or admins can change ${restricted.join(' and ')}. ` +
+          'You can change name, primary_email, phone and region.',
+      );
+    }
+
+    let reason: string | undefined;
+    if (patch.status !== undefined) {
+      if (!input.reason) {
+        throw Errors.validation('reason is required when changing status', {
+          field: 'reason',
+        });
+      }
+      reason = checkLength(input.reason, 'reason', 10, 500);
+    }
+
+    const { result, replayed } = await withIdempotency(
+      ctx,
+      'update_customer',
+      { customerRef, patch, reason },
+      () => this.crm.updateCustomer(ctx, customerRef, patch),
+    );
+
+    const showFullEmail = canSeeFullContactDetails(ctx);
+    const customer = showFullEmail
+      ? result.customer
+      : {
+          ...result.customer,
+          primaryEmail: maskEmail(result.customer.primaryEmail),
+          contacts: result.customer.contacts.map((c) => ({
+            ...c,
+            email: maskEmail(c.email),
+          })),
+        };
+    ctx.log.info(
+      { customerRef, changes: result.changesApplied, reason },
+      'Customer updated',
+    );
+    return { customer, changesApplied: result.changesApplied, replayed };
   }
 }

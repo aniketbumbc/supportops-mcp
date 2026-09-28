@@ -1,4 +1,7 @@
-import type { TicketingAdapter } from '../adapters/ticketing/ticketing-adapter';
+import type {
+  TicketingAdapter,
+  TicketPatch,
+} from '../adapters/ticketing/ticketing-adapter';
 import { assertRef } from '../domain/refs';
 import type {
   Ticket,
@@ -35,6 +38,34 @@ export interface SearchTicketsResult {
 }
 
 export const TICKET_LIMIT = { default: 10, max: 25 } as const;
+/** Allowed status changes. Reopening a closed ticket additionally needs a lead or admin. */
+const ALLOWED_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
+  open: ['pending', 'resolved'],
+  pending: ['open', 'resolved'],
+  resolved: ['open', 'closed'],
+  closed: ['open'],
+};
+
+/** Leads and admins may mark tickets urgent and reopen closed ones. */
+const isLeadOrAdmin = (ctx: RequestContext) =>
+  hasRole(ctx, 'support_lead', 'admin');
+
+export interface CreateTicketResult {
+  ticket: TicketView;
+  /** Set when the requested priority was lowered (urgent → high for non-leads). */
+  priorityAdjusted: {
+    requested: TicketPriority;
+    applied: TicketPriority;
+  } | null;
+  /** True when an identical earlier request's result was returned. */
+  replayed: boolean;
+}
+
+export interface UpdateTicketResult {
+  ticket: TicketView;
+  changesApplied: string[];
+  replayed: boolean;
+}
 export const EXCERPT_MAX_CHARS = 300;
 const SUBJECT_MAX_CHARS = 150;
 
@@ -137,5 +168,206 @@ export class SupportService {
         ? encodeCursor(offset + page.items.length, scope)
         : null,
     };
+  }
+
+  /**
+   * Opens a ticket. "urgent" is reserved for leads and admins: anyone else gets
+   * "high" plus an internal note saying why, rather than a refused request.
+   */
+  async createTicket(
+    ctx: RequestContext,
+    input: {
+      customerRef: string;
+      subject: string;
+      description: string;
+      priority?: TicketPriority;
+      category: TicketCategory;
+      relatedInvoiceNumber?: string;
+    },
+  ): Promise<CreateTicketResult> {
+    const customerRef = assertRef(
+      'customer',
+      input.customerRef,
+      'customer_ref',
+    );
+    const relatedInvoiceNumber =
+      input.relatedInvoiceNumber !== undefined
+        ? assertRef(
+            'invoice',
+            input.relatedInvoiceNumber,
+            'related_invoice_number',
+          )
+        : undefined;
+    const subject = input.subject.trim();
+    const description = input.description.trim();
+    if (subject.length < 5 || subject.length > 150) {
+      throw Errors.validation('subject must be 5 to 150 characters', {
+        field: 'subject',
+      });
+    }
+    if (description.length < 10 || description.length > 4000) {
+      throw Errors.validation('description must be 10 to 4000 characters', {
+        field: 'description',
+      });
+    }
+
+    const requested = input.priority ?? 'normal';
+    const applied: TicketPriority =
+      requested === 'urgent' && !isLeadOrAdmin(ctx) ? 'high' : requested;
+    const args = {
+      customerRef,
+      subject,
+      description,
+      priority: requested,
+      category: input.category,
+      relatedInvoiceNumber,
+    };
+
+    const { result, replayed } = await withIdempotency(
+      ctx,
+      'create_support_ticket',
+      args,
+      async () => {
+        let ticket = await this.ticketing.createTicket(ctx, {
+          ...args,
+          priority: applied,
+        });
+        if (applied !== requested) {
+          ticket = await this.ticketing.addComment(ctx, ticket.ticketNumber, {
+            body: `Priority set to "${applied}" instead of "${requested}": only support leads and admins can mark tickets urgent.`,
+            authorType: 'system',
+            isInternal: true,
+          });
+        }
+        return toView(ticket);
+      },
+    );
+
+    return {
+      ticket: result,
+      priorityAdjusted: applied !== requested ? { requested, applied } : null,
+      replayed,
+    };
+  }
+  /**
+   * Changes status / priority / assignee and/or adds an internal note.
+   * Status changes must follow ALLOWED_TRANSITIONS; reopening a closed ticket
+   * needs a lead or admin. Every change is recorded on the ticket.
+   */
+  async updateTicket(
+    ctx: RequestContext,
+    input: {
+      ticketNumber: string;
+      status?: TicketStatus;
+      priority?: TicketPriority;
+      /** A user id, or "unassigned". */
+      assignee?: string;
+      internalNote?: string;
+    },
+  ): Promise<UpdateTicketResult> {
+    const ticketNumber = assertRef(
+      'ticket',
+      input.ticketNumber,
+      'ticket_number',
+    );
+    const note = input.internalNote?.trim();
+    const assignee = input.assignee?.trim();
+
+    if (
+      input.status === undefined &&
+      input.priority === undefined &&
+      assignee === undefined &&
+      !note
+    ) {
+      throw Errors.validation(
+        'Provide at least one of status, priority, assignee, internal_note',
+      );
+    }
+    if (note !== undefined && (note.length < 1 || note.length > 2000)) {
+      throw Errors.validation('internal_note must be 1 to 2000 characters', {
+        field: 'internal_note',
+      });
+    }
+    if (
+      assignee !== undefined &&
+      (assignee.length < 1 || assignee.length > 100)
+    ) {
+      throw Errors.validation('assignee must be a user id or "unassigned"', {
+        field: 'assignee',
+      });
+    }
+
+    const args = {
+      ticketNumber,
+      status: input.status,
+      priority: input.priority,
+      assignee,
+      note,
+    };
+
+    const { result, replayed } = await withIdempotency(
+      ctx,
+      'update_ticket',
+      args,
+      async () => {
+        const current = await this.ticketing.getTicket(ctx, ticketNumber);
+
+        // Status rules
+        if (input.status !== undefined && input.status !== current.status) {
+          if (!ALLOWED_TRANSITIONS[current.status].includes(input.status)) {
+            throw Errors.policyViolation(
+              `A ${current.status} ticket can't be moved to ${input.status}. ` +
+                `Allowed: ${ALLOWED_TRANSITIONS[current.status].join(', ')}.`,
+              { from: current.status, to: input.status },
+            );
+          }
+          if (current.status === 'closed' && !isLeadOrAdmin(ctx)) {
+            throw Errors.policyViolation(
+              'Only support leads or admins can reopen a closed ticket.',
+            );
+          }
+        }
+
+        const patch: TicketPatch = {};
+        if (input.status !== undefined) patch.status = input.status;
+        if (input.priority !== undefined) {
+          patch.priority =
+            input.priority === 'urgent' && !isLeadOrAdmin(ctx)
+              ? 'high'
+              : input.priority;
+        }
+        if (assignee !== undefined)
+          patch.assignee =
+            assignee.toLowerCase() === 'unassigned' ? null : assignee;
+
+        const changes: string[] = [];
+        let ticket = current;
+        if (Object.keys(patch).length > 0) {
+          const updated = await this.ticketing.updateTicket(
+            ctx,
+            ticketNumber,
+            patch,
+          );
+          ticket = updated.ticket;
+          changes.push(...updated.changesApplied);
+        }
+        if (input.priority === 'urgent' && patch.priority === 'high') {
+          changes.push(
+            'priority urgent requested → high applied (urgent is for leads and admins)',
+          );
+        }
+        if (note) {
+          ticket = await this.ticketing.addComment(ctx, ticketNumber, {
+            body: note,
+            authorType: 'agent',
+            isInternal: true,
+          });
+          changes.push('internal note added');
+        }
+        return { ticket: toView(ticket), changesApplied: changes };
+      },
+    );
+
+    return { ...result, replayed };
   }
 }
