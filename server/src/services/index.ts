@@ -1,19 +1,31 @@
-import type { Adapters } from '../adapters/index';
-import { CustomerService } from './customer-service';
-import { BillingService } from './billing-service';
-import { SupportService } from './support-service';
+import type { Adapters } from '../adapters/index.js';
+import { ApprovalService } from './approval-service';
 import { AuthService } from './auth-service';
+import { BillingService } from './billing-service';
+import { CustomerService } from './customer-service';
+import { RefundEvaluator } from './refund-evaluator';
+import { RefundService } from './refund-service';
+import { SupportService } from './support-service';
 
 export interface Services {
+  auth: AuthService;
   customers: CustomerService;
   billing: BillingService;
   support: SupportService;
-  auth: AuthService;
+  refunds: RefundService;
+  approvals: ApprovalService;
 }
 
 /** Builds every service once at startup, wiring in the adapters they need. */
 export function createServices(adapters: Adapters): Services {
+  const evaluator = new RefundEvaluator(adapters.crm, adapters.billing);
+  const refunds = new RefundService(
+    evaluator,
+    adapters.billing,
+    adapters.ticketing,
+  );
   return {
+    auth: new AuthService(),
     customers: new CustomerService(
       adapters.crm,
       adapters.billing,
@@ -21,6 +33,7 @@ export function createServices(adapters: Adapters): Services {
     ),
     billing: new BillingService(adapters.billing, adapters.crm),
     support: new SupportService(adapters.ticketing),
-    auth: new AuthService(),
+    refunds,
+    approvals: new ApprovalService(evaluator, refunds, adapters.ticketing),
   };
 }

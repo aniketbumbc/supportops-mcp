@@ -21,6 +21,7 @@ import { registerMcpRoutes, SERVER_INFO } from './transport/mcp';
 import { getJwtKeys } from './gateway/keys';
 import { authRoutes } from './transport/auth-routes';
 import { closeRedis, getRedis } from './infra/redis';
+import { approvalRoutes } from './transport/approval-routes';
 
 type CheckResult = { ok: boolean; latencyMs: number; error?: string };
 
@@ -96,6 +97,7 @@ export async function buildServer() {
 
   if (env.AUTH_MODE === 'jwt') {
     await app.register(authRoutes, { services });
+    await app.register(approvalRoutes, { services });
   }
   registerMcpRoutes(app, { services });
 

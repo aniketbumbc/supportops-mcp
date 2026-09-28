@@ -973,6 +973,10 @@ async function seed() {
         rawSql`SELECT setval('mock.refund_ref_seq', ${pendingRefunds.length})`,
       );
     }
+    // Approvals were emptied above; start their numbers again at APR-0001.
+    await tx.execute(
+      rawSql`ALTER SEQUENCE platform.approval_ref_seq RESTART WITH 1`,
+    );
 
     // 7. Role policies: upsert so edits in the DB survive, but seed values are restored.
     for (const policy of ROLE_POLICIES) {
