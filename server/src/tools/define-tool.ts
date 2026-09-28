@@ -48,6 +48,7 @@ export interface ToolResult {
   summary: string;
   /** Small, safe facts for the audit log, e.g. { matches: 2 }. */
   audit?: Record<string, unknown>;
+  auditOutcome?: AuditOutcome;
 }
 
 export interface ToolDefinition<
@@ -122,7 +123,7 @@ export function defineTool<
         ctx,
         toolName: def.name,
         arguments: args,
-        outcome: 'success',
+        outcome: result.auditOutcome ?? 'success',
         resultSummary: result.audit,
         durationMs: elapsed(),
       });

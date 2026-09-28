@@ -6,6 +6,11 @@ import { getCustomerAccountTool } from './get-customer-account';
 import { getCustomerInvoicesTool } from './get-customer-invoices';
 import { searchCustomerTicketsTool } from './search-customer-tickets';
 import type { ToolDeps } from './types';
+import { createCustomerTool } from './create-customer';
+import { createSupportTicketTool } from './create-support-ticket';
+import { issueRefundTool } from './issue-refund';
+import { updateCustomerTool } from './update-customer';
+import { updateTicketTool } from './update-ticket';
 
 /**
  * Every tool the server can expose. Add one line per new tool.
@@ -17,6 +22,11 @@ export const TOOL_REGISTRY: ToolEntry[] = [
   getCustomerAccountTool,
   getCustomerInvoicesTool,
   searchCustomerTicketsTool,
+  createCustomerTool,
+  createSupportTicketTool,
+  issueRefundTool,
+  updateCustomerTool,
+  updateTicketTool,
 ];
 
 /**
