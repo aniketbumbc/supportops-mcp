@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CUSTOMER_STATUSES, CUSTOMER_TIERS } from '../domain/types';
+import { CUSTOMER_STATUSES, CUSTOMER_TIERS } from '../domain/type';
 import type { ToolName } from '../policy/tool-names';
 import { defineTool } from './define-tool';
 

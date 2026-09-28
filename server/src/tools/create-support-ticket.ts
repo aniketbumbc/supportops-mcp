@@ -3,7 +3,7 @@ import {
   TICKET_CATEGORIES,
   TICKET_PRIORITIES,
   TICKET_STATUSES,
-} from '../domain/types';
+} from '../domain/type';
 import type { ToolName } from '../policy/tool-names';
 import { defineTool } from './define-tool';
 
