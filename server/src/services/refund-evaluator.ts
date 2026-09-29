@@ -2,7 +2,7 @@ import type { BillingAdapter } from '../adapters/billing/billing-adapter';
 import type { CrmAdapter } from '../adapters/crm/crm-adapter.js';
 import { formatMoney } from '../domain/helper';
 import { assertRef } from '../domain/refs';
-import type { CustomerTier, Payment } from '../domain/types';
+import type { CustomerTier, Payment } from '../domain/type';
 import { Errors } from '../errors/index';
 import type { RequestContext } from '../gateway/context';
 import {
