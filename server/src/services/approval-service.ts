@@ -1,7 +1,7 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql, inArray } from 'drizzle-orm';
 import type { TicketingAdapter } from '../adapters/ticketing/ticketing-adapter';
 import { db } from '../db/client';
-import { approvals } from '../db/schema/index';
+import { approvals, users } from '../db/schema/index';
 import { formatMoney } from '../domain/helper';
 import { Errors } from '../errors/index';
 import type { RequestContext } from '../gateway/context';
@@ -60,6 +60,7 @@ export interface ApprovalView {
   /** Whether the caller could approve or reject it right now, and why not. */
   canDecide: boolean;
   cannotDecideReason: string | null;
+  requestedByName: string | null;
 }
 
 const isExpired = (row: ApprovalRow) =>
@@ -96,6 +97,7 @@ export class ApprovalService {
     ctx: RequestContext,
     policy: EffectivePolicy,
     row: ApprovalRow,
+    names: Map<string, string>,
   ): ApprovalView {
     const payload = row.payload as unknown as ApprovalPayload;
     const status: ApprovalStatus = isExpired(row) ? 'expired' : row.status;
@@ -124,7 +126,26 @@ export class ApprovalService {
       refundRef: row.executedRefundRef,
       canDecide: cannot === null,
       cannotDecideReason: cannot,
+      requestedByName: names.get(row.requestedBy) ?? null,
     };
+  }
+  /** Display names for the requesters/deciders of these rows, in one query. */
+  private async namesFor(rows: ApprovalRow[]): Promise<Map<string, string>> {
+    const ids = [
+      ...new Set(
+        rows
+          .flatMap((r) => [r.requestedBy, r.decidedBy])
+          .filter((x): x is string => Boolean(x)),
+      ),
+    ];
+    // requested_by holds user ids; ignore anything that isn't a UUID (e.g. old test data).
+    const uuids = ids.filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+    if (uuids.length === 0) return new Map();
+    const found = await db
+      .select({ id: users.id, displayName: users.displayName })
+      .from(users)
+      .where(inArray(users.id, uuids));
+    return new Map(found.map((u) => [u.id, u.displayName]));
   }
 
   /** Approvals in the caller's tenant, newest first. Default: pending ones. */
@@ -149,7 +170,8 @@ export class ApprovalService {
       )
       .orderBy(desc(approvals.requestedAt))
       .limit(100);
-    return rows.map((r) => this.toView(ctx, policy, r));
+    const names = await this.namesFor(rows);
+    return rows.map((r) => this.toView(ctx, policy, r, names));
   }
 
   /** Approves and executes the refund. Resumes execution if a previous approve failed midway. */
@@ -225,7 +247,8 @@ export class ApprovalService {
       { approvalRef, refundRef: refund.refundRef },
       'Approval executed',
     );
-    return this.toView(ctx, policy, done!);
+    const names = await this.namesFor([done!]);
+    return this.toView(ctx, policy, done!, names);
   }
 
   /** Rejects a pending request. A note explaining why is required. */
@@ -277,7 +300,8 @@ export class ApprovalService {
         );
     }
     ctx.log.info({ approvalRef }, 'Approval rejected');
-    return this.toView(ctx, policy, row);
+    const names = await this.namesFor([row]);
+    return this.toView(ctx, policy, row, names);
   }
 
   // ─── helpers ───────────────────────────────────────────

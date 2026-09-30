@@ -44,6 +44,7 @@ const toJson = (a: ApprovalView) => ({
   refund_ref: a.refundRef,
   can_decide: a.canDecide,
   cannot_decide_reason: a.cannotDecideReason,
+  requested_by_name: a.requestedByName,
 });
 
 declare module 'fastify' {
