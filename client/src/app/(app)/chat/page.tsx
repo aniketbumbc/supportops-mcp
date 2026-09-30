@@ -1,36 +1,32 @@
-import { PageHeader } from '@/components/shell/page-header';
-import { withUserMcp } from '@/lib/mcp';
+import { Chat } from '@/components/chat/chat';
 import { requireUser } from '@/lib/session';
 
-/** Placeholder until Step 8: proves the MCP client works with the user's session. */
+function suggestionsFor(roles: string[]): string[] {
+  const canRefund = roles.some((r) => ['support_lead', 'finance', 'admin'].includes(r));
+  const canTicket = roles.some((r) => ['support_agent', 'support_lead', 'admin'].includes(r));
+  return [
+    'Find Acme Traders and show their recent invoices',
+    'Who is Orbit Retail?',
+    canRefund
+      ? 'Acme was charged twice this month. Refund the duplicate.'
+      : 'Why was Kestrel Foods’ last invoice outside the refund window?',
+    canTicket
+      ? 'Pinewood Labs has a failed payment. Open a ticket for it.'
+      : 'Show the open tickets for Quartz Media',
+  ];
+}
+
 export default async function ChatPage({ searchParams }: PageProps<'/chat'>) {
   const user = await requireUser();
   const { denied } = await searchParams;
-  const tools = await withUserMcp((mcp) => mcp.listTools());
-
   return (
     <>
-      <PageHeader title="Chat" description="Ask about customers, invoices, tickets and refunds." />
       {denied && (
-        <p role="alert" className="mx-6 mt-5 rounded-md bg-amber-tint px-3 py-2.5 text-sm text-amber lg:mx-10">
+        <p role="alert" className="mx-4 mt-4 rounded-md bg-amber-tint px-3 py-2.5 text-sm text-amber lg:mx-6">
           That page isn’t available for your role.
         </p>
       )}
-      <div className="px-6 py-8 lg:px-10">
-        <p className="text-ink-soft">
-          Hi {user.displayName.split(' ')[0]}, the assistant arrives in Step 8. Tools available to you:
-        </p>
-        <ul className="mt-4 space-y-1.5 text-sm">
-          {tools.map((t) => (
-            <li key={t.name} className="flex items-center gap-2">
-              <span className="font-medium">{t.title ?? t.name}</span>
-              {t.annotations?.destructiveHint && (
-                <span className="rounded bg-amber-tint px-1.5 py-0.5 text-xs text-amber">changes money</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <Chat firstName={user.displayName.split(' ')[0]!} suggestions={suggestionsFor(user.roles)} />
     </>
   );
 }

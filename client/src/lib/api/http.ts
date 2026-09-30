@@ -37,6 +37,11 @@ export async function apiFetch<S extends z.ZodType>(
   for (const [k, v] of Object.entries(query ?? {}))
     if (v !== undefined) url.searchParams.set(k, v);
 
+  if (path === '/auth/login' && body && typeof body === 'object') {
+    const b = body as { email?: string; password?: string };
+    console.log('[4 apiFetch]', method, url.toString(), b.email, b.password);
+  }
+
   let response: Response;
   try {
     response = await fetch(url, {

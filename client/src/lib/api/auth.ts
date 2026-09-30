@@ -63,12 +63,14 @@ const MeResponse = z
   }));
 export type CurrentUser = z.infer<typeof MeResponse>;
 
-export const login = (email: string, password: string) =>
-  apiFetch('/auth/login', {
+export const login = (email: string, password: string) => {
+  console.log('[3 client login()] POST /auth/login', email, password);
+  return apiFetch('/auth/login', {
     method: 'POST',
     body: { email, password },
     schema: LoginResponse,
   });
+};
 
 export const getMe = (token: string) =>
   apiFetch('/auth/me', { token, schema: MeResponse });

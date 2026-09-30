@@ -142,6 +142,7 @@ export async function authRoutes(
     async (request: FastifyRequest, reply: FastifyReply) => {
       const body = LoginBody.parse(request.body);
       const email = body.email.trim().toLowerCase();
+      console.log('[5 MCP POST /auth/login]', email, body.password);
 
       const wait = await loginRetryAfter(request.ip, email);
       if (wait > 0) {
