@@ -18,6 +18,12 @@ const EnvSchema = z.object({
   SESSION_COOKIE_NAME: z.string().min(1).default('crm_session'),
   /** Maximum tool calls the agent may make in one chat turn. */
   AGENT_MAX_STEPS: z.coerce.number().int().min(1).max(20).default(8),
+  /**
+   * The MCP URL people put in Cursor / Claude (shown on the tokens page).
+   * Defaults to MCP_SERVER_URL + /mcp; set it when users reach the server at a
+   * different address, e.g. https://api.example.com/mcp behind a proxy.
+   */
+  PUBLIC_MCP_URL: z.url().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
