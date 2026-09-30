@@ -10,7 +10,10 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.82",
+    "@ai-sdk/react": "^4.0.126",
     "@modelcontextprotocol/sdk": "^1.31.0",
+    "ai": "^7.0.123",
     "lucide-react": "^1.49.0",
     "next": "16.3.6",
     "react": "19.2.8",
