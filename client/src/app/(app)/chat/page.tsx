@@ -26,7 +26,8 @@ export default async function ChatPage({ searchParams }: PageProps<'/chat'>) {
           That page isn’t available for your role.
         </p>
       )}
-      <Chat firstName={user.displayName.split(' ')[0]!} suggestions={suggestionsFor(user.roles)} />
+      <Chat firstName={user.displayName.split(' ')[0]!} suggestions={suggestionsFor(user.roles)}canRefund={user.roles.some((r) => ['support_lead', 'finance', 'admin'].includes(r))}
+      />
     </>
   );
 }

@@ -7,10 +7,13 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef } from 'react';
 import { Composer } from './composer';
 import { MessageView } from './message-view';
+import { ChatActionsProvider } from '@/components/cards/chat-actions';
 
 interface Props {
   firstName: string;
   suggestions: string[];
+  canRefund: boolean;
+
 }
 
 /** Reads { error: { message } } from our route's JSON errors; the transport puts the body in the message. */
@@ -24,7 +27,7 @@ function friendlyError(error: Error & { statusCode?: number }): string {
   return 'Something went wrong. Try again.';
 }
 
-export function Chat({ firstName, suggestions }: Props) {
+export function Chat({ firstName, suggestions, canRefund }: Props) {
   const router = useRouter();
   const transport = useMemo(() => new DefaultChatTransport<UIMessage>({ api: '/api/chat' }), []);
   const { messages, sendMessage, status, stop, error, regenerate, clearError } = useChat({ transport });
@@ -72,7 +75,11 @@ export function Chat({ firstName, suggestions }: Props) {
             </ul>
           </div>
         ) : (
-          messages.map((m) => <MessageView key={m.id} message={m} />)
+          <ChatActionsProvider value={{ send, busy, canRefund }}>
+          {messages.map((m) => (
+            <MessageView key={m.id} message={m} />
+          ))}
+        </ChatActionsProvider>
         )}
 
         {status === 'submitted' && (
