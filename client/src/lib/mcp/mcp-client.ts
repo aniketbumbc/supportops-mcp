@@ -78,6 +78,24 @@ function toConnectionError(error: unknown): McpConnectionError {
   return new McpConnectionError('failed', 'Could not reach the support tools.');
 }
 
+/**
+ * Server tools put a one-line summary, then JSON (see toolSuccess). Some MCP
+ * clients drop structuredContent; the JSON copy is still in the text.
+ */
+function parseStructuredFromText(text: string): Record<string, unknown> | null {
+  const nl = text.indexOf('\n');
+  if (nl === -1) return null;
+  try {
+    const parsed: unknown = JSON.parse(text.slice(nl + 1));
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    /* text-only result */
+  }
+  return null;
+}
+
 /** Tool errors arrive as JSON text: {"error": {code, message, retryable, ...}}. */
 function parseToolError(text: string): ToolError {
   try {
@@ -167,7 +185,7 @@ export class McpSession {
       ok: true,
       structured:
         (result.structuredContent as Record<string, unknown> | undefined) ??
-        null,
+        parseStructuredFromText(text),
       text,
     };
   }

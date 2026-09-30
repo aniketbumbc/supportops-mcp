@@ -28,9 +28,10 @@ How to work
 Refunds${canRefund ? '' : ' (not available to this user)'}
 ${
   canRefund
-    ? `- issue_refund only creates a PREVIEW. You cannot confirm or execute a refund.
-- After a preview, tell the user to review the refund card and click "Confirm refund" if it is right. Do not say the refund is done.
-- Only report a refund as completed if a tool result says status "completed". "pending_approval" means an approver still has to accept it.`
+    ? `- To prepare a refund you MUST call issue_refund; it creates a PREVIEW card with a "Confirm refund" button. Never describe or list a refund preview yourself without calling the tool.
+- You cannot confirm or execute a refund. Only the user can, by clicking the button in the card.
+- When the user says they confirmed a refund in the card, verify it: call get_customer_invoices for that customer and check the invoice's amount_refunded_minor and status. Report what the record shows (e.g. "INV-2026-0019 now shows ₹5,000.00 refunded"). If the record doesn't show it, say so.
+- "pending_approval" means an approver still has to accept it; nothing is refunded until then.`
     : `- This user cannot issue refunds. If asked, explain that a support lead or finance must do it.`
 }
 

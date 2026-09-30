@@ -4,6 +4,7 @@ import { CustomerMatchesCard } from './customer-matches';
 import { InvoicesCard } from './invoices-card';
 import { CreatedCustomerCard, CreatedTicketCard, UpdatedCustomerCard, UpdatedTicketCard } from './record-results';
 import { TicketsCard } from './tickets-card';
+import { RefundCard, type RefundData } from './refund-card';
 
 /**
  * The card for a successful tool result, or null if that tool has no card
@@ -40,6 +41,8 @@ export function ToolResultCard({
       return <CreatedCustomerCard data={data as unknown as T.CreatedCustomerData} />;
     case 'update_customer':
       return <UpdatedCustomerCard data={data as unknown as T.UpdatedCustomerData} />;
+    case 'issue_refund':
+      return <RefundCard data={data as unknown as RefundData} input={input} />;
     default:
       return null;
   }

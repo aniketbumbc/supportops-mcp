@@ -112,6 +112,8 @@ export function Chat({ firstName, suggestions, canRefund }: Props) {
           Refunds always need your confirmation. The assistant can make mistakes; check important details.
         </p>
       </div>
+      <div ref={endRef} className="scroll-mb-36" />
+
     </div>
   );
 }
