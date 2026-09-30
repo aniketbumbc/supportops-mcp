@@ -11,7 +11,7 @@ import { ApiError, getMe, type CurrentUser, type Role } from '@/lib/api';
  * - secure in production: only sent over HTTPS.
  * - sameSite=lax: not sent on cross-site POSTs (CSRF protection).
  * The token is already signed by the MCP server, so it needs no extra encryption here;
- * it is verified by the server on every call.
+ * It is verified by the server on every call.
  */
 
 export async function setSession(
