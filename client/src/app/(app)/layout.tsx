@@ -30,6 +30,12 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-md bg-ink px-3 py-2 text-sm text-paper focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      >
+        Skip to content
+      </a>
       <MobileNav>{sidebar}</MobileNav>
 
       <aside className="hidden w-64 shrink-0 flex-col border-r border-rule bg-paper lg:sticky lg:top-0 lg:flex lg:h-screen">
@@ -37,7 +43,7 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
         {sidebar}
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col bg-white">{children}</main>
+      <main id="main" className="flex min-w-0 flex-1 flex-col bg-surface">{children}</main>
     </div>
   );
 }

@@ -10,6 +10,8 @@ const DEV_ACCOUNTS = [
   { email: 'admin@crm.example', role: 'Admin' },
 ];
 
+export const metadata = { title: 'Login' };
+
 export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   const params = await searchParams;
   const next = typeof params.next === 'string' ? params.next : undefined;
@@ -20,7 +22,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   return (
     <main className="grid min-h-screen lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       {/* Brand panel: slim header on mobile, full column on desktop */}
-      <section className="flex flex-col justify-between bg-ink px-6 py-6 text-paper lg:px-14 lg:py-12">
+      <section className="flex flex-col justify-between bg-brand px-6 py-6 text-brand-fg lg:px-14 lg:py-12">
         <p className="text-lg font-semibold tracking-tight">SupportOps</p>
         <div className="hidden lg:block">
           <h2 className="max-w-sm text-[2.1rem] leading-[1.15] font-medium tracking-tight">
@@ -30,7 +32,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
             <RefundSlip />
           </div>
         </div>
-        <p className="hidden text-sm text-paper/60 lg:block">
+        <p className="hidden text-sm text-brand-fg/60 lg:block">
           Every action is checked against your role and recorded.
         </p>
       </section>

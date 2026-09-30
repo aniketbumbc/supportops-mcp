@@ -54,7 +54,7 @@ export function ApprovalItem({ approval: initial, currentUserId, onDecided }: Pr
     });
 
   return (
-    <li className="rounded-lg border border-rule bg-white">
+    <li className="rounded-lg border border-rule bg-surface">
       <div className="grid gap-3 px-4 py-4 sm:grid-cols-[1fr_auto]">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -125,7 +125,7 @@ export function ApprovalItem({ approval: initial, currentUserId, onDecided }: Pr
             <button
               type="button"
               onClick={() => setMode('approve')}
-              className="rounded-md bg-ledger px-3.5 py-1.5 text-sm font-medium text-white hover:bg-ledger-dark focus-visible:ring-3 focus-visible:ring-ledger/40 focus-visible:outline-none"
+              className="rounded-md bg-ledger px-3.5 py-1.5 text-sm font-medium text-paper hover:bg-ledger-dark focus-visible:ring-3 focus-visible:ring-ledger/40 focus-visible:outline-none"
             >
               Approve…
             </button>
@@ -169,7 +169,7 @@ export function ApprovalItem({ approval: initial, currentUserId, onDecided }: Pr
               <button
                 type="submit"
                 disabled={pending || (mode === 'reject' && note.trim().length < 5)}
-                className={`rounded-md px-3.5 py-1.5 text-sm font-medium text-white disabled:opacity-60 ${
+                className={`rounded-md px-3.5 py-1.5 text-sm font-medium text-paper disabled:opacity-60 ${
                   mode === 'approve' ? 'bg-ledger hover:bg-ledger-dark' : 'bg-danger hover:bg-danger/90'
                 }`}
               >

@@ -60,7 +60,7 @@ function Row({ pat }: { pat: PersonalAccessToken }) {
               type="button"
               onClick={revoke}
               disabled={pending}
-              className="rounded-md bg-danger px-3 py-1.5 text-sm font-medium text-white hover:bg-danger/90 disabled:opacity-60"
+              className="rounded-md bg-danger px-3 py-1.5 text-sm font-medium text-paper hover:bg-danger/90 disabled:opacity-60"
             >
               {pending ? 'Revoking…' : 'Revoke'}
             </button>
@@ -97,7 +97,7 @@ export function TokenList({ tokens }: { tokens: PersonalAccessToken[] }) {
         {active.length === 0 ? (
           <p className="mt-2 text-sm text-ink-soft">No active tokens.</p>
         ) : (
-          <ul className="mt-2 divide-y divide-rule rounded-lg border border-rule bg-white">
+          <ul className="mt-2 divide-y divide-rule rounded-lg border border-rule bg-surface">
             {active.map((t) => (
               <Row key={t.id} pat={t} />
             ))}
@@ -107,7 +107,7 @@ export function TokenList({ tokens }: { tokens: PersonalAccessToken[] }) {
       {inactive.length > 0 && (
         <section>
           <h2 className="text-sm font-medium text-ink-soft">Revoked and expired</h2>
-          <ul className="mt-2 divide-y divide-rule rounded-lg border border-rule bg-white opacity-80">
+          <ul className="mt-2 divide-y divide-rule rounded-lg border border-rule bg-surface opacity-80">
             {inactive.map((t) => (
               <Row key={t.id} pat={t} />
             ))}

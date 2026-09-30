@@ -16,6 +16,8 @@ function suggestionsFor(roles: string[]): string[] {
   ];
 }
 
+export const metadata = { title: 'Chat' };
+
 export default async function ChatPage({ searchParams }: PageProps<'/chat'>) {
   const user = await requireUser();
   const { denied } = await searchParams;

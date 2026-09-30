@@ -5,6 +5,8 @@ import { env } from '@/env';
 import { listTokens } from '@/lib/api';
 import { getSessionToken, requireUser } from '@/lib/session';
 
+export const metadata = { title: 'Tokens' };
+
 export default async function TokensPage() {
   await requireUser();
   const tokens = await listTokens((await getSessionToken())!);

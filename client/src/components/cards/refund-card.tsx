@@ -99,7 +99,7 @@ export function RefundCard({ data, input }: { data: RefundData; input: Record<st
   return (
     <section
       aria-label="Refund"
-      className={`overflow-hidden rounded-lg border bg-white ${
+      className={`overflow-hidden rounded-lg border bg-surface ${
         phase.kind === 'preview'
           ? 'border-ledger/40 shadow-[0_8px_24px_-12px_rgba(31,111,92,0.35)]'
           : 'border-rule'
@@ -169,7 +169,7 @@ export function RefundCard({ data, input }: { data: RefundData; input: Record<st
               type="button"
               onClick={confirm}
               disabled={pending}
-              className="rounded-md bg-ledger px-4 py-2 text-sm font-medium text-white hover:bg-ledger-dark focus-visible:ring-3 focus-visible:ring-ledger/40 focus-visible:ring-offset-1 focus-visible:outline-none disabled:opacity-60"
+              className="rounded-md bg-ledger px-4 py-2 text-sm font-medium text-paper hover:bg-ledger-dark focus-visible:ring-3 focus-visible:ring-ledger/40 focus-visible:ring-offset-1 focus-visible:outline-none disabled:opacity-60"
             >
               {needsApproval ? `Request approval for ${amount}` : `Confirm refund of ${amount}`}
             </button>

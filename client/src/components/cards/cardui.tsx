@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 
 export function Card({ title, meta, children }: { title: string; meta?: ReactNode; children: ReactNode }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-rule bg-white">
+    <section className="overflow-hidden rounded-lg border border-rule bg-surface">
       <header className="flex flex-wrap items-baseline justify-between gap-2 border-b border-rule bg-paper/60 px-4 py-2.5">
         <h3 className="text-sm font-medium">{title}</h3>
         {meta && <div className="text-xs text-ink-soft">{meta}</div>}

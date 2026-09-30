@@ -6,7 +6,7 @@ export function RefundSlip() {
     return (
       <div
         aria-hidden="true"
-        className="w-72 rotate-[-2deg] rounded-md bg-paper p-5 text-ink shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)] motion-safe:animate-slip-in"
+        className="theme-light w-72 rotate-[-2deg] rounded-md bg-paper p-5 text-ink shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)] motion-safe:animate-slip-in"
       >
         <div className="flex items-baseline justify-between border-b border-dashed border-rule pb-3">
           <span className="text-sm font-medium">Refund preview</span>
@@ -27,7 +27,7 @@ export function RefundSlip() {
           </div>
         </dl>
         <div className="flex gap-2">
-          <span className="flex-1 rounded bg-ledger py-2 text-center text-sm font-medium text-white">
+          <span className="flex-1 rounded bg-ledger py-2 text-center text-sm font-medium text-paper">
             Confirm refund
           </span>
           <span className="rounded border border-rule px-3 py-2 text-sm text-ink-soft">Cancel</span>

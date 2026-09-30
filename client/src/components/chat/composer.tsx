@@ -38,7 +38,7 @@ export function Composer({ busy, disabled, onSend, onStop }: Props) {
         e.preventDefault();
         send();
       }}
-      className="flex items-end gap-2 rounded-xl border border-rule bg-white p-2 shadow-[0_1px_2px_rgba(27,42,58,0.06)] focus-within:border-ledger focus-within:ring-3 focus-within:ring-ledger/15"
+      className="flex items-end gap-2 rounded-xl border border-rule bg-surface p-2 shadow-[0_1px_2px_rgba(27,42,58,0.06)] focus-within:border-ledger focus-within:ring-3 focus-within:ring-ledger/15"
     >
       <label htmlFor="chat-input" className="sr-only">
         Message
@@ -73,7 +73,7 @@ export function Composer({ busy, disabled, onSend, onStop }: Props) {
           type="submit"
           aria-label="Send"
           disabled={!text.trim() || disabled}
-          className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ledger text-white hover:bg-ledger-dark focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none disabled:bg-rule disabled:text-ink-soft"
+          className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ledger text-paper hover:bg-ledger-dark focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none disabled:bg-rule disabled:text-ink-soft"
         >
           <ArrowUp size={18} />
         </button>

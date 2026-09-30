@@ -6,6 +6,7 @@ import { CustomerService } from './customer-service';
 import { RefundEvaluator } from './refund-evaluator';
 import { RefundService } from './refund-service';
 import { SupportService } from './support-service';
+import { AuditService } from './audit-service';
 
 export interface Services {
   auth: AuthService;
@@ -14,6 +15,7 @@ export interface Services {
   support: SupportService;
   refunds: RefundService;
   approvals: ApprovalService;
+  audit: AuditService;
 }
 
 /** Builds every service once at startup, wiring in the adapters they need. */
@@ -35,5 +37,6 @@ export function createServices(adapters: Adapters): Services {
     support: new SupportService(adapters.ticketing),
     refunds,
     approvals: new ApprovalService(evaluator, refunds, adapters.ticketing),
+    audit: new AuditService(),
   };
 }

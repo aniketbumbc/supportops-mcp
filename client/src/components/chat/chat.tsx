@@ -97,7 +97,7 @@ export function Chat({ firstName, suggestions, canRefund }: Props) {
                 clearError();
                 void regenerate();
               }}
-              className="flex shrink-0 items-center gap-1.5 rounded-md border border-danger/30 px-2.5 py-1 font-medium hover:bg-white focus-visible:ring-2 focus-visible:ring-danger/40 focus-visible:outline-none"
+              className="flex shrink-0 items-center gap-1.5 rounded-md border border-danger/30 px-2.5 py-1 font-medium hover:bg-surface focus-visible:ring-2 focus-visible:ring-danger/40 focus-visible:outline-none"
             >
               <RotateCcw size={14} /> Try again
             </button>
@@ -106,7 +106,7 @@ export function Chat({ firstName, suggestions, canRefund }: Props) {
         <div ref={endRef} />
       </div>
 
-      <div className="sticky bottom-0 bg-gradient-to-t from-white from-70% to-white/0 pt-6 pb-4">
+      <div className="sticky bottom-0 bg-gradient-to-t from-surface from-70% to-surface/0 pt-6 pb-4">
         <Composer busy={busy} onSend={send} onStop={() => void stop()} />
         <p className="mt-2 text-center text-xs text-ink-soft">
           Refunds always need your confirmation. The assistant can make mistakes; check important details.

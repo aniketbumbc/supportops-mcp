@@ -9,7 +9,7 @@ const instrument = Instrument_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'SupportOps',
+  title: { default: 'SupportOps', template: '%s · SupportOps' },
   description: 'AI support assistant for customers, invoices, tickets and refunds',
 };
 

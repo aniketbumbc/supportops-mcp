@@ -16,6 +16,11 @@
   --color-danger-tint: #fdecea;
   --color-amber: #9a6414;
   --color-amber-tint: #fbf3e4;
+    /* Card / panel background (white in light mode). */
+    --color-surface: #ffffff;
+    /* The brand panel on the login page stays dark in both modes. */
+    --color-brand: #1b2a3a;
+    --color-brand-fg: #f6f7f4;
 
   --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
 
@@ -30,6 +35,39 @@
       transform: translateY(0) rotate(-2deg);
     }
   }
+}
+
+/*
+ * Dark mode follows the operating system. Only the token values change; every
+ * component already uses the tokens, so nothing else needs to know about it.
+ */
+ @media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark; /* native inputs, date pickers and scrollbars go dark too */
+    --color-ink: #e4e9ec;
+    --color-ink-soft: #9aa7b3;
+    --color-paper: #0e151d;
+    --color-surface: #151f2a;
+    --color-rule: #283543;
+    --color-ledger: #34a386;
+    --color-ledger-dark: #2c8c73;
+    --color-ledger-tint: #133029;
+    --color-danger: #f0736a;
+    --color-danger-tint: #3a1815;
+    --color-amber: #e3a857;
+    --color-amber-tint: #33250e;
+  }
+}
+
+/* Pins the light palette for an element in any mode (e.g. the paper slip on the login page). */
+.theme-light {
+  --color-ink: #1b2a3a;
+  --color-ink-soft: #3d4f63;
+  --color-paper: #f6f7f4;
+  --color-surface: #ffffff;
+  --color-rule: #d8ddd6;
+  --color-ledger: #1f6f5c;
+  color-scheme: light;
 }
 
 body {

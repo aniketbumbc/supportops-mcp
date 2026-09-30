@@ -39,7 +39,7 @@ export function TokenCreator({ mcpUrl }: { mcpUrl: string }) {
     const snippet = tab === 'cursor' ? cursorConfig : claudeCommand;
 
     return (
-      <section className="rounded-lg border border-ledger/40 bg-white shadow-[0_8px_24px_-12px_rgba(31,111,92,0.35)]">
+      <section className="rounded-lg border border-ledger/40 bg-surface shadow-[0_8px_24px_-12px_rgba(31,111,92,0.35)]">
         <header className="border-b border-rule px-4 py-3">
           <h2 className="flex items-center gap-2 font-medium">
             <KeyRound size={16} className="text-ledger" /> “{created.name}” is ready
@@ -107,7 +107,7 @@ export function TokenCreator({ mcpUrl }: { mcpUrl: string }) {
         e.preventDefault();
         submit();
       }}
-      className="rounded-lg border border-rule bg-white px-4 py-4"
+      className="rounded-lg border border-rule bg-surface px-4 py-4"
     >
       <h2 className="font-medium">Create a token</h2>
       <p className="mt-1 text-sm text-ink-soft">
@@ -136,7 +136,7 @@ export function TokenCreator({ mcpUrl }: { mcpUrl: string }) {
             id="token-days"
             value={days}
             onChange={(e) => setDays(Number(e.target.value) as (typeof DAYS)[number])}
-            className="mt-1.5 block rounded-md border border-rule bg-white px-3 py-2 text-sm outline-none focus:border-ledger focus:ring-3 focus:ring-ledger/15"
+            className="mt-1.5 block rounded-md border border-rule bg-surface px-3 py-2 text-sm outline-none focus:border-ledger focus:ring-3 focus:ring-ledger/15"
           >
             {DAYS.map((d) => (
               <option key={d} value={d}>
@@ -148,7 +148,7 @@ export function TokenCreator({ mcpUrl }: { mcpUrl: string }) {
         <button
           type="submit"
           disabled={pending || !name.trim()}
-          className="flex items-center gap-2 rounded-md bg-ledger px-4 py-2 text-sm font-medium text-white hover:bg-ledger-dark focus-visible:ring-3 focus-visible:ring-ledger/40 focus-visible:outline-none disabled:opacity-60"
+          className="flex items-center gap-2 rounded-md bg-ledger px-4 py-2 text-sm font-medium text-paper hover:bg-ledger-dark focus-visible:ring-3 focus-visible:ring-ledger/40 focus-visible:outline-none disabled:opacity-60"
         >
           {pending && <Loader2 size={14} className="animate-spin" />}
           Create token

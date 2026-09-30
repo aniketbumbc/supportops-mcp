@@ -33,7 +33,7 @@ export function NavLinks({ items, pendingApprovals }: Props) {
               <span className="flex-1">{item.label}</span>
               {item.href === '/approvals' && pendingApprovals ? (
                 <span
-                  className="rounded-full bg-amber px-2 py-0.5 text-xs font-medium text-white"
+                  className="rounded-full bg-amber px-2 py-0.5 text-xs font-medium text-paper"
                   aria-label={`${pendingApprovals} pending`}
                 >
                   {pendingApprovals}

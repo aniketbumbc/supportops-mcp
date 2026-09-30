@@ -13,7 +13,7 @@ export function CopyButton({ text, label = 'Copy' }: { text: string; label?: str
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
-      className="flex shrink-0 items-center gap-1.5 rounded-md border border-rule bg-white px-2.5 py-1 text-xs font-medium hover:bg-ink/5 focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none"
+      className="flex shrink-0 items-center gap-1.5 rounded-md border border-rule bg-surface px-2.5 py-1 text-xs font-medium hover:bg-ink/5 focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none"
     >
       {copied ? <Check size={13} className="text-ledger" /> : <Copy size={13} />}
       {copied ? 'Copied' : label}

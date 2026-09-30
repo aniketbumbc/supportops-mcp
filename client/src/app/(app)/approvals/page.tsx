@@ -12,6 +12,8 @@ const TABS: { value: ApprovalStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All' },
 ];
 
+export const metadata = { title: 'Approvals' };
+
 export default async function ApprovalsPage({ searchParams }: PageProps<'/approvals'>) {
   const user = await requireRole('support_lead', 'finance', 'admin');
   const { status: raw } = await searchParams;
