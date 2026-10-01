@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { KeyRound, ScrollText, ShieldCheck, UserCheck } from 'lucide-react';
+import { ArrowUpRight, Code, KeyRound, ScrollText, ShieldCheck, UserCheck } from 'lucide-react';
 import { getCurrentUser, safeNextPath } from '@/lib/session';
 import { LoginForm } from './login-form';
 import { InvoiceSlip, RefundSlip } from './refund-slip';
@@ -73,7 +73,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
             </div>
           </div>
 
-          <ul className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-ink-soft">
+          <ul className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-ink-soft">
             <li className="flex items-center gap-1.5">
               <KeyRound aria-hidden className="size-3.5" />
               Role-based access
@@ -88,6 +88,20 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
             </li>
           </ul>
         </div>
+
+        <a
+          href="https://www.aniketbdev.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group absolute bottom-5 left-6 flex items-center gap-2 rounded-full border border-rule bg-surface py-1.5 pr-3.5 pl-1.5 text-sm shadow-[0_8px_24px_-12px_rgba(27,42,58,0.35)] transition hover:-translate-y-0.5 hover:border-ledger/40 hover:shadow-[0_12px_28px_-12px_var(--color-ledger)] focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none lg:left-8"
+        >
+          <span aria-hidden className="flex size-7 items-center justify-center rounded-full bg-ledger text-white shadow-sm">
+            <Code className="size-3.5" />
+          </span>
+          <span className="text-ink-soft">
+            Developed by <span className="font-semibold text-ledger">Aniket B</span>
+          </span>
+        </a>
       </section>
     </main>
   );

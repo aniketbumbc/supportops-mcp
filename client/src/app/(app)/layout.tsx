@@ -25,7 +25,20 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
   const sidebar = (
     <nav aria-label="Main" className="flex flex-1 flex-col justify-between px-3 pb-3">
       <NavLinks items={items} pendingApprovals={pendingApprovals} />
-      <UserBlock user={user} />
+      <div>
+        <UserBlock user={user} />
+        <p className="mt-3 text-center text-xs text-ink-soft">
+          Developed by{' '}
+          <a
+            href="https://www.aniketbdev.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-ledger hover:underline focus-visible:rounded focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none"
+          >
+            Aniket B
+          </a>
+        </p>
+      </div>
     </nav>
   );
 
