@@ -34,6 +34,7 @@ const ApprovalJson = z
     can_decide: z.boolean(),
     cannot_decide_reason: z.string().nullable(),
     requested_by_name: z.string().nullable().optional(),
+    decided_by_name: z.string().nullable().optional(),
   })
   .transform((a) => ({
     approvalRef: a.approval_ref,
@@ -57,6 +58,7 @@ const ApprovalJson = z
     canDecide: a.can_decide,
     cannotDecideReason: a.cannot_decide_reason,
     requestedByName: a.requested_by_name,
+    decidedByName: a.decided_by_name,
   }));
 export type Approval = z.infer<typeof ApprovalJson>;
 

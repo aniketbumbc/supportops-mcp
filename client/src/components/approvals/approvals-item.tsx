@@ -35,7 +35,7 @@ export function ApprovalItem({ approval: initial, currentUserId, onDecided }: Pr
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const amount = formatMoney(a.amountMinor, a.currency);
-  const who = (id: string | null, name: string | null) =>
+  const who = (id: string | null, name?: string | null) =>
     id === currentUserId ? 'you' : (name ?? 'another user');
 
   const submit = () =>

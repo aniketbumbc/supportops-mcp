@@ -22,10 +22,7 @@ export async function loginAction(
 ): Promise<LoginState> {
   const parsed = LoginForm.safeParse(Object.fromEntries(formData));
   const email = String(formData.get('email') ?? '');
-  console.log('[2 Next loginAction]', parsed.data.email, parsed.data.password);
   if (!parsed.success) return { error: parsed.error.issues[0]!.message, email };
-
-  console.log('[2 Next loginAction]', parsed.data.email, parsed.data.password);
 
   try {
     const result = await login(parsed.data.email, parsed.data.password);
