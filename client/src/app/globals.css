@@ -38,11 +38,12 @@
 }
 
 /*
- * Dark mode follows the operating system. Only the token values change; every
+ * Dark mode follows the operating system unless the theme toggle has set
+ * data-theme="light" or "dark" on <html>. Only the token values change; every
  * component already uses the tokens, so nothing else needs to know about it.
  */
- @media (prefers-color-scheme: dark) {
-  :root {
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
     color-scheme: dark; /* native inputs, date pickers and scrollbars go dark too */
     --color-ink: #e4e9ec;
     --color-ink-soft: #9aa7b3;
@@ -57,6 +58,27 @@
     --color-amber: #e3a857;
     --color-amber-tint: #33250e;
   }
+}
+
+/* Same dark palette, chosen explicitly with the toggle. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink: #e4e9ec;
+  --color-ink-soft: #9aa7b3;
+  --color-paper: #0e151d;
+  --color-surface: #151f2a;
+  --color-rule: #283543;
+  --color-ledger: #34a386;
+  --color-ledger-dark: #2c8c73;
+  --color-ledger-tint: #133029;
+  --color-danger: #f0736a;
+  --color-danger-tint: #3a1815;
+  --color-amber: #e3a857;
+  --color-amber-tint: #33250e;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 /* Pins the light palette for an element in any mode (e.g. the paper slip on the login page). */

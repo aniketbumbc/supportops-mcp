@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { ArrowUpRight, Code, KeyRound, ScrollText, ShieldCheck, UserCheck } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { getCurrentUser, safeNextPath } from '@/lib/session';
 import { LoginForm } from './login-form';
 import { InvoiceSlip, RefundSlip } from './refund-slip';
@@ -48,6 +49,8 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
           aria-hidden
           className="absolute top-1/2 left-1/2 -z-10 size-130 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ledger/10 blur-3xl"
         />
+
+        <ThemeToggle className="absolute top-5 right-6 lg:right-8" />
 
         <div className="w-full max-w-md">
           <div className="rounded-2xl border border-rule bg-surface p-8 shadow-[0_20px_50px_-24px_rgba(27,42,58,0.25)] sm:p-10">
