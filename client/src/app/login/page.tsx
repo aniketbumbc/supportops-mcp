@@ -11,8 +11,6 @@ const DEV_ACCOUNTS = [
   { email: 'admin@crm.example', role: 'Admin' },
 ];
 
-export const metadata = { title: 'Login' };
-
 export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   const params = await searchParams;
   const next = typeof params.next === 'string' ? params.next : undefined;

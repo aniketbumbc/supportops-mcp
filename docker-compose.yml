@@ -1,0 +1,65 @@
+services:
+  # Mock CRM / billing / ticketing systems. Internal only: never on the "web" network.
+  crm-mock:
+    build:
+      context: ./server
+    container_name: "esmcp-crm-mock"
+    command: ["pnpm", "dev:mock"]
+    env_file:
+      - ./server/.env
+    environment:
+      - NODE_ENV=production
+      - MOCK_SYSTEMS_PORT=4100
+    expose:
+      - "4100"
+    restart: unless-stopped
+    networks:
+      - default
+
+  # MCP server + API → https://api.enterprisesupportmcp.com
+  backend:
+    build:
+      context: ./server
+    container_name: "esmcp-api"
+    env_file:
+      - ./server/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - MOCK_SYSTEMS_BASE_URL=http://crm-mock:4100
+      - MCP_RESOURCE_URL=https://api.enterprisesupportmcp.com/mcp
+      - JWT_JWKS_FILE=.keys/jwks.json
+      - JWT_PRIVATE_KEY_FILE=.keys/private.jwk.json
+    volumes:
+      - ./server/.keys:/app/.keys:ro
+    expose:
+      - "4000"
+    depends_on:
+      - crm-mock
+    restart: unless-stopped
+    networks:
+      - default
+      - web
+
+  # Next.js app → https://enterprisesupportmcp.com
+  frontend:
+    build:
+      context: ./client
+    container_name: "esmcp-web"
+    env_file:
+      - ./client/.env
+    environment:
+      - MCP_SERVER_URL=http://backend:4000
+      - PUBLIC_MCP_URL=https://api.enterprisesupportmcp.com/mcp
+    expose:
+      - "3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - default
+      - web
+
+networks:
+  web:
+    external: true
