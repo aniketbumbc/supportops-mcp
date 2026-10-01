@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { KeyRound, ScrollText, ShieldCheck, UserCheck } from 'lucide-react';
 import { getCurrentUser, safeNextPath } from '@/lib/session';
 import { LoginForm } from './login-form';
-import { RefundSlip } from './refund-slip';
+import { InvoiceSlip, RefundSlip } from './refund-slip';
 
 const DEV_ACCOUNTS = [
   { email: 'agent@crm.example', role: 'Support agent' },
@@ -29,8 +29,9 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
           <h2 className="max-w-sm text-[2.1rem] leading-[1.15] font-medium tracking-tight">
             Resolve customer issues. Money moves only when a person confirms.
           </h2>
-          <div className="mt-12 pl-2">
+          <div className="mt-12 flex flex-col items-start gap-10 pl-2">
             <RefundSlip />
+            <InvoiceSlip />
           </div>
         </div>
         <p className="hidden text-sm text-brand-fg/60 lg:block">
