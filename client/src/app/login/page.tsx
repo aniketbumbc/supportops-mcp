@@ -23,7 +23,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
     <main className="grid min-h-screen lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       {/* Brand panel: slim header on mobile, full column on desktop */}
       <section className="flex flex-col justify-between bg-brand px-6 py-6 text-brand-fg lg:px-14 lg:py-12">
-        <p className="text-lg font-semibold tracking-tight">SupportOps</p>
+        <p className="text-lg font-semibold tracking-tight">Enterprise SupportOps</p>
         <div className="hidden lg:block">
           <h2 className="max-w-sm text-[2.1rem] leading-[1.15] font-medium tracking-tight">
             Resolve customer issues. Money moves only when a person confirms.
@@ -38,7 +38,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
       </section>
 
       {/* Form */}
-      <section className="flex items-center px-6 py-12 lg:px-20">
+      <section className="flex items-center justify-center px-6 py-12 lg:px-20">
         <div className="w-full max-w-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
           <p className="mt-1.5 text-[15px] text-ink-soft">Use your work account.</p>

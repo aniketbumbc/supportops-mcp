@@ -82,7 +82,7 @@ export function TokenCreator({ mcpUrl }: { mcpUrl: string }) {
             <p className="mt-2 text-xs text-ink-soft">
               {tab === 'cursor'
                 ? 'Add this to .cursor/mcp.json (or ~/.cursor/mcp.json), then enable "supportops" in Cursor Settings → MCP.'
-                : 'Run this in a terminal. Claude Code will then offer the SupportOps tools.'}
+                : 'Run this in a terminal. Claude Code will then offer the Enterprise SupportOps tools.'}
             </p>
             <pre className="mt-2 overflow-x-auto rounded-md bg-ink p-3 font-mono text-xs leading-relaxed text-paper">
               {snippet}
@@ -111,7 +111,7 @@ export function TokenCreator({ mcpUrl }: { mcpUrl: string }) {
     >
       <h2 className="font-medium">Create a token</h2>
       <p className="mt-1 text-sm text-ink-soft">
-        Tokens connect tools like Cursor or Claude Code to SupportOps. They act with your role, and every action is
+        Tokens connect tools like Cursor or Claude Code to Enterprise SupportOps. They act with your role, and every action is
         recorded under the token’s name.
       </p>
       <div className="mt-4 flex flex-wrap items-end gap-3">

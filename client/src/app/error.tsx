@@ -18,7 +18,7 @@ export default function RootError({ error }: { error: Error & { digest?: string 
     <main className="flex min-h-screen items-center justify-center px-6">
       <div className="max-w-md text-center">
         <AlertTriangle className="mx-auto text-amber" size={28} />
-        <h1 className="mt-4 text-lg font-semibold">SupportOps can’t reach its server</h1>
+        <h1 className="mt-4 text-lg font-semibold">Enterprise SupportOps can’t reach its server</h1>
         <p className="mt-2 text-sm text-ink-soft">
           The support server may be restarting or unreachable. Nothing was changed. Try again in a moment.
         </p>

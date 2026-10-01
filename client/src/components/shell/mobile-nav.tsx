@@ -31,7 +31,7 @@ export function MobileNav({ children }: { children: ReactNode }) {
   return (
     <div className="lg:hidden">
       <header className="flex items-center justify-between border-b border-rule bg-paper px-4 py-3">
-        <span className="text-base font-semibold tracking-tight">SupportOps</span>
+        <span className="text-base font-semibold tracking-tight">Enterprise SupportOps</span>
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -47,7 +47,7 @@ export function MobileNav({ children }: { children: ReactNode }) {
           <div className="absolute inset-0 bg-ink/40" onClick={close} />
           <div className="absolute inset-y-0 left-0 flex w-72 flex-col bg-paper shadow-xl">
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-base font-semibold tracking-tight">SupportOps</span>
+              <span className="text-base font-semibold tracking-tight">Enterprise SupportOps</span>
               <button
                 type="button"
                 onClick={close}

@@ -39,7 +39,7 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
       <MobileNav>{sidebar}</MobileNav>
 
       <aside className="hidden w-64 shrink-0 flex-col border-r border-rule bg-paper lg:sticky lg:top-0 lg:flex lg:h-screen">
-        <p className="px-6 pt-6 pb-8 text-lg font-semibold tracking-tight">SupportOps</p>
+        <p className="px-6 pt-6 pb-8 text-lg font-semibold tracking-tight">Enterprise SupportOps</p>
         {sidebar}
       </aside>
 
