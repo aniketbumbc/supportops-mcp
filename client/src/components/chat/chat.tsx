@@ -2,11 +2,11 @@
 
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, type UIMessage } from 'ai';
-import { RotateCcw } from 'lucide-react';
+import { ArrowUpRight, FileText, RotateCcw, Search, ShieldCheck, Sparkles, Ticket, UserRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef } from 'react';
 import { Composer } from './composer';
-import { MessageView } from './message-view';
+import { AssistantAvatar, MessageView } from './message-view';
 import { ChatActionsProvider } from '@/components/cards/chat-actions';
 
 interface Props {
@@ -17,6 +17,9 @@ interface Props {
 }
 
 /** Reads { error: { message } } from our route's JSON errors; the transport puts the body in the message. */
+/** Decorative icon per suggestion slot (search, profile, invoice/refund, ticket). */
+const SUGGESTION_ICONS = [Search, UserRound, FileText, Ticket];
+
 function friendlyError(error: Error & { statusCode?: number }): string {
   try {
     const body = JSON.parse(error.message) as { error?: { message?: string } };
@@ -55,23 +58,43 @@ export function Chat({ firstName, suggestions, canRefund }: Props) {
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 lg:px-6">
       <div className="flex-1 space-y-6 py-8" aria-live="polite">
         {messages.length === 0 ? (
-          <div className="pt-10">
-            <h2 className="text-2xl font-semibold tracking-tight">What can I help with, {firstName}?</h2>
-            <p className="mt-2 text-[15px] text-ink-soft">
+          <div className="relative isolate pt-10 sm:pt-16">
+            <div
+              aria-hidden
+              className="absolute -top-10 left-1/2 -z-10 size-96 -translate-x-1/2 rounded-full bg-ledger/10 blur-3xl"
+            />
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-ledger text-white shadow-[0_8px_24px_-8px_var(--color-ledger)]">
+              <Sparkles aria-hidden className="size-6" />
+            </div>
+            <h2 className="mt-6 text-3xl font-semibold tracking-tight">
+              Hi {firstName}, <span className="text-ledger">what can I help with?</span>
+            </h2>
+            <p className="mt-2 max-w-xl text-[15px] text-ink-soft">
               I can look up customers, invoices and tickets, and prepare refunds for you to confirm.
             </p>
-            <ul className="mt-8 grid gap-2 sm:grid-cols-2">
-              {suggestions.map((s) => (
-                <li key={s}>
-                  <button
-                    type="button"
-                    onClick={() => send(s)}
-                    className="h-full w-full rounded-lg border border-rule px-4 py-3 text-left text-sm hover:border-ledger/40 hover:bg-ledger-tint focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none"
-                  >
-                    {s}
-                  </button>
-                </li>
-              ))}
+            <p className="mt-10 text-xs font-medium tracking-wide text-ink-soft uppercase">Try asking</p>
+            <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+              {suggestions.map((s, i) => {
+                const Icon = SUGGESTION_ICONS[i % SUGGESTION_ICONS.length]!;
+                return (
+                  <li key={s}>
+                    <button
+                      type="button"
+                      onClick={() => send(s)}
+                      className="group flex h-full w-full items-start gap-3 rounded-xl border border-rule bg-surface p-4 text-left text-sm shadow-[0_1px_2px_rgba(27,42,58,0.04)] transition hover:-translate-y-0.5 hover:border-ledger/40 hover:shadow-[0_10px_24px_-14px_rgba(27,42,58,0.35)] focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none"
+                    >
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-ledger-tint text-ledger">
+                        <Icon aria-hidden className="size-4" />
+                      </span>
+                      <span className="flex-1 pt-1.5 leading-snug">{s}</span>
+                      <ArrowUpRight
+                        aria-hidden
+                        className="mt-1.5 size-4 shrink-0 text-ink-soft opacity-0 transition group-hover:opacity-100"
+                      />
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ) : (
@@ -83,13 +106,18 @@ export function Chat({ firstName, suggestions, canRefund }: Props) {
         )}
 
         {status === 'submitted' && (
-          <p className="text-sm text-ink-soft" role="status">
-            Thinking…
-          </p>
+          <div className="flex items-center gap-3" role="status">
+            <AssistantAvatar />
+            <span className="flex items-center gap-1 rounded-full bg-ink/[0.04] px-3 py-2" aria-label="Thinking">
+              <span className="size-1.5 animate-bounce rounded-full bg-ledger [animation-delay:-0.3s]" />
+              <span className="size-1.5 animate-bounce rounded-full bg-ledger [animation-delay:-0.15s]" />
+              <span className="size-1.5 animate-bounce rounded-full bg-ledger" />
+            </span>
+          </div>
         )}
 
         {error && (error as { statusCode?: number }).statusCode !== 401 && (
-          <div role="alert" className="flex items-center justify-between gap-3 rounded-md bg-danger-tint px-4 py-3 text-sm text-danger">
+          <div role="alert" className="flex items-center justify-between gap-3 rounded-xl border border-danger/20 bg-danger-tint px-4 py-3 text-sm text-danger">
             <span>{friendlyError(error)}</span>
             <button
               type="button"
@@ -106,9 +134,10 @@ export function Chat({ firstName, suggestions, canRefund }: Props) {
         <div ref={endRef} />
       </div>
 
-      <div className="sticky bottom-0 bg-gradient-to-t from-surface from-70% to-surface/0 pt-6 pb-4">
+      <div className="sticky bottom-0 bg-linear-to-t from-surface from-70% to-surface/0 pt-6 pb-5">
         <Composer busy={busy} onSend={send} onStop={() => void stop()} />
-        <p className="mt-2 text-center text-xs text-ink-soft">
+        <p className="mt-2.5 flex items-center justify-center gap-1.5 text-center text-xs text-ink-soft">
+          <ShieldCheck aria-hidden className="size-3.5 shrink-0 text-ledger" />
           Refunds always need your confirmation. The assistant can make mistakes; check important details.
         </p>
       </div>

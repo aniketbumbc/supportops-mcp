@@ -38,7 +38,7 @@ export function Composer({ busy, disabled, onSend, onStop }: Props) {
         e.preventDefault();
         send();
       }}
-      className="flex items-end gap-2 rounded-xl border border-rule bg-surface p-2 shadow-[0_1px_2px_rgba(27,42,58,0.06)] focus-within:border-ledger focus-within:ring-3 focus-within:ring-ledger/15"
+      className="flex items-end gap-2 rounded-2xl border border-rule bg-surface p-2.5 shadow-[0_12px_32px_-16px_rgba(27,42,58,0.3)] transition focus-within:border-ledger focus-within:ring-4 focus-within:ring-ledger/15"
     >
       <label htmlFor="chat-input" className="sr-only">
         Message
@@ -57,14 +57,14 @@ export function Composer({ busy, disabled, onSend, onStop }: Props) {
           }
         }}
         placeholder="Ask about a customer, invoice, ticket or refund"
-        className="max-h-[200px] flex-1 resize-none bg-transparent px-2 py-1.5 text-[15px] outline-none placeholder:text-ink-soft/60"
+        className="max-h-50 flex-1 resize-none bg-transparent px-2.5 py-2 text-[15px] outline-none placeholder:text-ink-soft/60"
       />
       {busy ? (
         <button
           type="button"
           onClick={onStop}
           aria-label="Stop"
-          className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ink text-paper hover:bg-ink-soft focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none"
+          className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-ink text-paper transition hover:bg-ink-soft focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none"
         >
           <Square size={14} fill="currentColor" />
         </button>
@@ -73,7 +73,7 @@ export function Composer({ busy, disabled, onSend, onStop }: Props) {
           type="submit"
           aria-label="Send"
           disabled={!text.trim() || disabled}
-          className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ledger text-paper hover:bg-ledger-dark focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none disabled:bg-rule disabled:text-ink-soft"
+          className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-ledger text-white shadow-sm transition hover:bg-ledger-dark focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none disabled:bg-rule disabled:text-ink-soft"
         >
           <ArrowUp size={18} />
         </button>

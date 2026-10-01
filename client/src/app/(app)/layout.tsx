@@ -1,3 +1,4 @@
+import { Brand } from '@/components/shell/brand';
 import { MobileNav } from '@/components/shell/mobile-nav';
 import { NavLinks } from '@/components/shell/nav-links';
 import { UserBlock } from '@/components/shell/user-block';
@@ -22,7 +23,7 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
   }
 
   const sidebar = (
-    <nav aria-label="Main" className="flex flex-1 flex-col justify-between px-3 pb-4">
+    <nav aria-label="Main" className="flex flex-1 flex-col justify-between px-3 pb-3">
       <NavLinks items={items} pendingApprovals={pendingApprovals} />
       <UserBlock user={user} />
     </nav>
@@ -39,7 +40,9 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
       <MobileNav>{sidebar}</MobileNav>
 
       <aside className="hidden w-64 shrink-0 flex-col border-r border-rule bg-paper lg:sticky lg:top-0 lg:flex lg:h-screen">
-        <p className="px-6 pt-6 pb-8 text-lg font-semibold tracking-tight">Enterprise SupportOps</p>
+        <div className="px-5 pt-6 pb-8">
+          <Brand />
+        </div>
         {sidebar}
       </aside>
 

@@ -3,6 +3,7 @@
 import { Menu, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
+import { Brand } from './brand';
 
 /**
  * Top bar with a menu button on small screens; opens the sidebar as a drawer.
@@ -31,7 +32,7 @@ export function MobileNav({ children }: { children: ReactNode }) {
   return (
     <div className="lg:hidden">
       <header className="flex items-center justify-between border-b border-rule bg-paper px-4 py-3">
-        <span className="text-base font-semibold tracking-tight">Enterprise SupportOps</span>
+        <Brand />
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -46,8 +47,8 @@ export function MobileNav({ children }: { children: ReactNode }) {
         <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label="Menu">
           <div className="absolute inset-0 bg-ink/40" onClick={close} />
           <div className="absolute inset-y-0 left-0 flex w-72 flex-col bg-paper shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-base font-semibold tracking-tight">Enterprise SupportOps</span>
+            <div className="flex items-center justify-between px-4 pt-4 pb-6">
+              <Brand />
               <button
                 type="button"
                 onClick={close}
