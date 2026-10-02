@@ -1,19 +1,83 @@
-import { Chat } from '@/components/chat/chat';
+import { Chat, type Suggestion } from '@/components/chat/chat';
 import { requireUser } from '@/lib/session';
 
-function suggestionsFor(roles: string[]): string[] {
+/**
+ * Guided first questions, grouped so a new user sees the main flows in order.
+ * Each one maps to a seeded test scenario; the hint says what to watch for.
+ */
+function suggestionsFor(roles: string[]): Suggestion[] {
   const canRefund = roles.some((r) => ['support_lead', 'finance', 'admin'].includes(r));
-  const canTicket = roles.some((r) => ['support_agent', 'support_lead', 'admin'].includes(r));
-  return [
-    'Find Acme Traders and show their recent invoices',
-    'Who is Orbit Retail?',
-    canRefund
-      ? 'Acme was charged twice this month. Refund the duplicate.'
-      : 'Why was Kestrel Foods’ last invoice outside the refund window?',
-    canTicket
-      ? 'Pinewood Labs has a failed payment. Open a ticket for it.'
-      : 'Show the open tickets for Quartz Media',
+  const canApproveLotus = roles.some((r) => ['finance', 'admin'].includes(r));
+
+  const lookup: Suggestion[] = [
+    {
+      group: 'lookup',
+      icon: 'search',
+      prompt: 'Find Acme Traders and show their recent invoices',
+      hint: 'Customer and invoice cards, read live from the CRM and billing.',
+    },
+    {
+      group: 'lookup',
+      icon: 'user',
+      prompt: 'Who is Orbit Retail?',
+      hint: 'Two customers match, so the assistant asks instead of guessing.',
+    },
   ];
+
+  const refunds: Suggestion[] = canRefund
+    ? [
+        {
+          group: 'refunds',
+          icon: 'refund',
+          prompt: 'Acme was charged twice this month. Refund the duplicate.',
+          hint: 'A refund slip appears. No money moves until you confirm.',
+        },
+        {
+          group: 'refunds',
+          icon: 'blocked',
+          prompt: 'Refund Kestrel Foods’ oldest paid invoice',
+          hint: 'Refused: it is outside the refund window.',
+        },
+        {
+          group: 'refunds',
+          icon: 'approval',
+          prompt: 'Refund Lotus Textiles’ annual invoice in full',
+          hint: canApproveLotus
+            ? 'Too large to refund directly, so it waits in Approvals for a second person.'
+            : 'Above your role’s refund limit, so it is refused.',
+        },
+      ]
+    : [
+        {
+          group: 'refunds',
+          icon: 'blocked',
+          prompt: 'Why was Kestrel Foods’ last invoice outside the refund window?',
+          hint: 'Refund rules are explained. Your role can’t issue refunds.',
+        },
+        {
+          group: 'refunds',
+          icon: 'user',
+          prompt: 'Is Vega Motors’ account active?',
+          hint: 'The account is suspended, which limits what can be done.',
+        },
+        {
+          group: 'refunds',
+          icon: 'refund',
+          prompt: 'Refund Acme Traders’ duplicate charge',
+          hint: 'Denied: refunds need a support lead, finance or admin.',
+        },
+      ];
+
+  const tickets: Suggestion[] = [
+    {
+      group: 'tickets',
+      icon: 'ticket',
+      prompt: 'Show open tickets for Quartz Media',
+      hint: 'One ticket hides instructions aimed at the AI. Watch it ignore them.',
+    },
+  ];
+
+  return [...lookup, ...refunds, ...tickets];
 }
 
 export const metadata = { title: 'Chat' };
