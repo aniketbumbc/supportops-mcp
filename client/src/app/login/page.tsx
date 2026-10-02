@@ -1,5 +1,6 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ArrowUpRight, Code, KeyRound, ScrollText, ShieldCheck, UserCheck } from 'lucide-react';
+import { ArrowUpRight, BookOpen, Code, KeyRound, ScrollText, ShieldCheck, UserCheck } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { getCurrentUser, safeNextPath } from '@/lib/session';
 import { LoginForm } from './login-form';
@@ -50,7 +51,16 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
           className="absolute top-1/2 left-1/2 -z-10 size-130 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ledger/10 blur-3xl"
         />
 
-        <ThemeToggle className="absolute top-5 right-6 lg:right-8" />
+        <div className="absolute top-5 right-6 flex items-center gap-2 lg:right-8">
+          <Link
+            href="/docs"
+            className="flex items-center gap-1.5 rounded-full border border-rule bg-surface px-3.5 py-1.5 text-sm font-medium text-ink-soft shadow-[0_1px_2px_rgba(27,42,58,0.06)] transition hover:border-ledger/40 hover:text-ledger focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none"
+          >
+            <BookOpen aria-hidden className="size-4" />
+            Docs
+          </Link>
+          <ThemeToggle />
+        </div>
 
         <div className="w-full max-w-md">
           <div className="rounded-2xl border border-rule bg-surface p-8 shadow-[0_20px_50px_-24px_rgba(27,42,58,0.25)] sm:p-10">

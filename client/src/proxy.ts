@@ -9,7 +9,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  */
 
 const COOKIE = process.env.SESSION_COOKIE_NAME ?? 'crm_session';
-const PUBLIC_PATHS = ['/login'];
+const PUBLIC_PATHS = ['/login', '/docs'];
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
