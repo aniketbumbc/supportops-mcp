@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowUpRight, BookOpen, Code, KeyRound, ScrollText, ShieldCheck, UserCheck } from 'lucide-react';
+import { DemoButton } from '@/components/demo/demo-button';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { getCurrentUser, safeNextPath } from '@/lib/session';
 import { LoginForm } from './login-form';
@@ -59,6 +60,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
             <BookOpen aria-hidden className="size-4" />
             How it works
           </Link>
+          <DemoButton />
           <ThemeToggle />
         </div>
 

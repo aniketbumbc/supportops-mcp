@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, CheckCircle2, Clock, ShieldAlert, ShieldCheck } from 'lucide-react';
-import { useAutoStep } from './use-auto-step';
+import { useAutoStep } from '@/lib/hooks/use-auto-step';
 
 type Step = 'Preview' | 'Confirm' | 'Limit check' | 'Approval' | 'Refunded';
 

@@ -2,7 +2,7 @@
 
 import { Fragment } from 'react';
 import { Database, MessageSquare, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
-import { useAutoStep } from './use-auto-step';
+import { useAutoStep } from '@/lib/hooks/use-auto-step';
 
 const NODES = [
   {
