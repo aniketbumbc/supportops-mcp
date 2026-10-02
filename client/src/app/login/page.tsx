@@ -53,11 +53,11 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
 
         <div className="absolute top-5 right-6 flex items-center gap-2 lg:right-8">
           <Link
-            href="/docs"
+            href="/how-it-works"
             className="flex items-center gap-1.5 rounded-full border border-rule bg-surface px-3.5 py-1.5 text-sm font-medium text-ink-soft shadow-[0_1px_2px_rgba(27,42,58,0.06)] transition hover:border-ledger/40 hover:text-ledger focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none"
           >
             <BookOpen aria-hidden className="size-4" />
-            Docs
+            How it works
           </Link>
           <ThemeToggle />
         </div>

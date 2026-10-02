@@ -1,8 +1,5 @@
 @import "tailwindcss";
 
-/* The root .gitignore ignores every "docs" folder, and Tailwind skips ignored files; scan the docs page anyway. */
-@source "./docs";
-
 /*
  * Design tokens. Cool, operational palette for a money-handling support tool.
  * Tailwind v4 turns these into utilities: bg-ink, text-ledger, border-rule, ...
@@ -27,7 +24,7 @@
 
   --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
 
-  /* Docs page: a dot travelling along a connector, and content fading in. */
+  /* How it works page: a dot travelling along a connector, and content fading in. */
   --animate-travel: travel 700ms ease-out forwards;
   @keyframes travel {
     from {
