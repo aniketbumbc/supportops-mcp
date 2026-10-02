@@ -2,20 +2,13 @@
 
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, type UIMessage } from 'ai';
-import { ArrowUpRight, Ban, Hourglass, ReceiptText, RotateCcw, Search, ShieldCheck, Sparkles, Ticket, UserRound } from 'lucide-react';
+import { RotateCcw, ShieldCheck, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef } from 'react';
 import { Composer } from './composer';
+import { SuggestionGroups, SuggestionStrip, type Suggestion } from './suggestions';
 import { AssistantAvatar, MessageView } from './message-view';
 import { ChatActionsProvider } from '@/components/cards/chat-actions';
-
-/** A guided first question: what to ask, and what the user will see happen. */
-export interface Suggestion {
-  group: 'lookup' | 'refunds' | 'tickets';
-  icon: keyof typeof SUGGESTION_ICONS;
-  prompt: string;
-  hint: string;
-}
 
 interface Props {
   firstName: string;
@@ -24,20 +17,6 @@ interface Props {
 }
 
 /** Reads { error: { message } } from our route's JSON errors; the transport puts the body in the message. */
-const SUGGESTION_ICONS = {
-  search: Search,
-  user: UserRound,
-  refund: ReceiptText,
-  blocked: Ban,
-  approval: Hourglass,
-  ticket: Ticket,
-};
-
-const SUGGESTION_GROUPS: { id: Suggestion['group']; title: string }[] = [
-  { id: 'lookup', title: 'Look things up' },
-  { id: 'refunds', title: 'Refunds & safety rules' },
-  { id: 'tickets', title: 'Tickets' },
-];
 
 function friendlyError(error: Error & { statusCode?: number }): string {
   try {
@@ -68,6 +47,17 @@ export function Chat({ firstName, suggestions, canRefund }: Props) {
     endRef.current?.scrollIntoView({ block: 'end' });
   }, [messages, status]);
 
+  // Guided questions already sent in this chat (exact match on the user's text).
+  const asked = useMemo(
+    () =>
+      new Set(
+        messages
+          .filter((m) => m.role === 'user')
+          .map((m) => m.parts.map((p) => (p.type === 'text' ? p.text : '')).join('')),
+      ),
+    [messages],
+  );
+
   const send = (text: string) => {
     if (error) clearError();
     void sendMessage({ text });
@@ -92,50 +82,8 @@ export function Chat({ firstName, suggestions, canRefund }: Props) {
               I can look up customers, invoices and tickets, and prepare refunds for you to confirm.
             </p>
             <p className="mt-10 text-sm font-medium text-ink">New here? Try these in order.</p>
-            <div className="mt-4 space-y-6">
-              {SUGGESTION_GROUPS.map((g, gi) => {
-                const items = suggestions.filter((s) => s.group === g.id);
-                if (items.length === 0) return null;
-                return (
-                  <section key={g.id} aria-labelledby={`suggest-${g.id}`}>
-                    <h3
-                      id={`suggest-${g.id}`}
-                      className="flex items-center gap-2 text-xs font-semibold tracking-wide text-ink-soft uppercase"
-                    >
-                      <span className="flex size-5 items-center justify-center rounded-full bg-ledger-tint text-[11px] text-ledger">
-                        {gi + 1}
-                      </span>
-                      {g.title}
-                    </h3>
-                    <ul className="mt-2.5 grid gap-3 sm:grid-cols-2">
-                      {items.map((s) => {
-                        const Icon = SUGGESTION_ICONS[s.icon];
-                        return (
-                          <li key={s.prompt}>
-                            <button
-                              type="button"
-                              onClick={() => send(s.prompt)}
-                              className="group flex h-full w-full items-start gap-3 rounded-xl border border-rule bg-surface p-4 text-left text-sm shadow-[0_1px_2px_rgba(27,42,58,0.04)] transition hover:-translate-y-0.5 hover:border-ledger/40 hover:shadow-[0_10px_24px_-14px_rgba(27,42,58,0.35)] focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none"
-                            >
-                              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-ledger-tint text-ledger">
-                                <Icon aria-hidden className="size-4" />
-                              </span>
-                              <span className="flex-1 pt-1">
-                                <span className="block leading-snug font-medium text-ink">{s.prompt}</span>
-                                <span className="mt-1 block text-xs leading-snug text-ink-soft">{s.hint}</span>
-                              </span>
-                              <ArrowUpRight
-                                aria-hidden
-                                className="mt-1.5 size-4 shrink-0 text-ink-soft opacity-0 transition group-hover:opacity-100"
-                              />
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </section>
-                );
-              })}
+            <div className="mt-4">
+              <SuggestionGroups suggestions={suggestions} onPick={send} />
             </div>
           </div>
         ) : (
@@ -176,6 +124,9 @@ export function Chat({ firstName, suggestions, canRefund }: Props) {
       </div>
 
       <div className="sticky bottom-0 bg-linear-to-t from-surface from-70% to-surface/0 pt-6 pb-5">
+        {messages.length > 0 && (
+          <SuggestionStrip suggestions={suggestions} asked={asked} onPick={send} busy={busy} />
+        )}
         <Composer busy={busy} onSend={send} onStop={() => void stop()} />
         <p className="mt-2.5 flex items-center justify-center gap-1.5 text-center text-xs text-ink-soft">
           <ShieldCheck aria-hidden className="size-3.5 shrink-0 text-ledger" />

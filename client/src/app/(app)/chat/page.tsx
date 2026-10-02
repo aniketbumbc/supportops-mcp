@@ -1,4 +1,5 @@
-import { Chat, type Suggestion } from '@/components/chat/chat';
+import { Chat } from '@/components/chat/chat';
+import type { Suggestion } from '@/components/chat/suggestions';
 import { requireUser } from '@/lib/session';
 
 /**
@@ -13,12 +14,14 @@ function suggestionsFor(roles: string[]): Suggestion[] {
     {
       group: 'lookup',
       icon: 'search',
+      chip: 'Acme’s invoices',
       prompt: 'Find Acme Traders and show their recent invoices',
       hint: 'Customer and invoice cards, read live from the CRM and billing.',
     },
     {
       group: 'lookup',
       icon: 'user',
+      chip: 'Who is Orbit Retail?',
       prompt: 'Who is Orbit Retail?',
       hint: 'Two customers match, so the assistant asks instead of guessing.',
     },
@@ -29,18 +32,21 @@ function suggestionsFor(roles: string[]): Suggestion[] {
         {
           group: 'refunds',
           icon: 'refund',
+          chip: 'Refund Acme’s duplicate',
           prompt: 'Acme was charged twice this month. Refund the duplicate.',
           hint: 'A refund slip appears. No money moves until you confirm.',
         },
         {
           group: 'refunds',
           icon: 'blocked',
+          chip: 'Kestrel’s old invoice',
           prompt: 'Refund Kestrel Foods’ oldest paid invoice',
           hint: 'Refused: it is outside the refund window.',
         },
         {
           group: 'refunds',
           icon: 'approval',
+          chip: 'Lotus annual refund',
           prompt: 'Refund Lotus Textiles’ annual invoice in full',
           hint: canApproveLotus
             ? 'Too large to refund directly, so it waits in Approvals for a second person.'
@@ -51,18 +57,21 @@ function suggestionsFor(roles: string[]): Suggestion[] {
         {
           group: 'refunds',
           icon: 'blocked',
+          chip: 'Kestrel refund window',
           prompt: 'Why was Kestrel Foods’ last invoice outside the refund window?',
           hint: 'Refund rules are explained. Your role can’t issue refunds.',
         },
         {
           group: 'refunds',
           icon: 'user',
+          chip: 'Vega Motors’ status',
           prompt: 'Is Vega Motors’ account active?',
           hint: 'The account is suspended, which limits what can be done.',
         },
         {
           group: 'refunds',
           icon: 'refund',
+          chip: 'Try a refund',
           prompt: 'Refund Acme Traders’ duplicate charge',
           hint: 'Denied: refunds need a support lead, finance or admin.',
         },
@@ -72,6 +81,7 @@ function suggestionsFor(roles: string[]): Suggestion[] {
     {
       group: 'tickets',
       icon: 'ticket',
+      chip: 'Quartz Media tickets',
       prompt: 'Show open tickets for Quartz Media',
       hint: 'One ticket hides instructions aimed at the AI. Watch it ignore them.',
     },
