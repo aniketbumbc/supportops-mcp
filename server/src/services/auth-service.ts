@@ -98,7 +98,6 @@ export class AuthService {
   }): Promise<LoginResult> {
     const email = input.email.trim().toLowerCase();
     const password = input.password;
-    console.log('[6 AuthService.login]', email, password);
 
     const [user] =
       email.length > 0 && email.length <= 254
