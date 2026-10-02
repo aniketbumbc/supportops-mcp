@@ -42,6 +42,8 @@ export const AUTH_LIMITS = {
   loginPerIp: { name: 'login-ip', limit: 20, windowSec: 15 * MINUTE },
   /** Personal access tokens created by one user. */
   patCreatePerUser: { name: 'pat-create', limit: 10, windowSec: HOUR },
+  /** Demo logins from one visitor IP. */
+  demoPerIp: { name: 'demo-ip', limit: 1, windowSec: 30 * MINUTE },
 } satisfies Record<string, RateLimitRule>;
 
 const READ: RateLimitRule[] = [

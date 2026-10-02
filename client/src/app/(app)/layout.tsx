@@ -1,15 +1,17 @@
+import { DemoBanner } from '@/components/demo/demo-banner';
 import { Brand } from '@/components/shell/brand';
 import { MobileNav } from '@/components/shell/mobile-nav';
 import { NavLinks } from '@/components/shell/nav-links';
 import { UserBlock } from '@/components/shell/user-block';
-import { listApprovals } from '@/lib/api';
+import { DEMO_USER_EMAIL, listApprovals } from '@/lib/api';
 import { navItemsFor } from '@/lib/nav';
-import { getSessionToken, requireUser } from '@/lib/session';
+import { getSessionExpiry, getSessionToken, requireUser } from '@/lib/session';
 
 /** Shared shell for every logged-in page: role-aware sidebar, user block, mobile drawer. */
 export default async function AppLayout({ children }: LayoutProps<'/'>) {
   const user = await requireUser();
   const items = navItemsFor(user.roles);
+  const demoEndsAt = user.email === DEMO_USER_EMAIL ? await getSessionExpiry() : null;
 
   // Pending-approval badge for approvers. A failure here must never break the page.
   let pendingApprovals: number | null = null;
@@ -59,7 +61,10 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
         {sidebar}
       </aside>
 
-      <main id="main" className="flex min-w-0 flex-1 flex-col bg-surface">{children}</main>
+      <main id="main" className="flex min-w-0 flex-1 flex-col bg-surface">
+        {demoEndsAt && <DemoBanner endsAt={demoEndsAt.toISOString()} />}
+        {children}
+      </main>
     </div>
   );
 }

@@ -98,6 +98,7 @@ MOCK_SYSTEMS_PORT=4100
 MOCK_SYSTEMS_BASE_URL=http://localhost:4100
 MOCK_SYSTEMS_API_KEY=<any random string, 8+ characters>
 SEED_USER_PASSWORD=<password for the demo users>
+DEMO_USER_PASSWORD=<password for demo@crm.example; optional, random if unset>
 ```
 
 Then set up the signing keys and database:

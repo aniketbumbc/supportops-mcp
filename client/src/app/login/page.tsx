@@ -77,6 +77,11 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
                 Your session ended. Sign in again to continue.
               </p>
             )}
+            {params.reason === 'demo-ended' && (
+              <p className="mt-6 rounded-md bg-ledger-tint px-3 py-2.5 text-sm text-ledger">
+                Demo ended. Thanks for trying it! Sign in, or try the demo again later.
+              </p>
+            )}
 
             <div className="mt-8">
               <LoginForm

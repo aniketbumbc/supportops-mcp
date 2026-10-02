@@ -79,6 +79,22 @@ const EnvSchema = z
       .min(5)
       .max(24 * 60)
       .default(8 * 60),
+    /** Turns the "Try demo" login on or off. Off unless set to true. */
+    DEMO_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    /**
+     * Shared secret between the web app and POST /auth/demo. The demo login needs no
+     * password, so only callers that know this may use it. Required when DEMO_ENABLED=true.
+     */
+    DEMO_SECRET: z.preprocess(
+      emptyAsUndefined,
+      z
+        .string()
+        .min(32, 'DEMO_SECRET must be at least 32 characters')
+        .optional(),
+    ),
     /** Personal access tokens: default and maximum lifetime in days. */
     PAT_DEFAULT_DAYS: z.coerce.number().int().min(1).max(365).default(30),
     PAT_MAX_DAYS: z.coerce.number().int().min(1).max(365).default(90),
@@ -130,6 +146,13 @@ const EnvSchema = z
       .pipe(z.array(z.enum(ROLES)).min(1, 'DEV_ROLES needs at least one role')),
   })
   .superRefine((e, issue) => {
+    if (e.DEMO_ENABLED && !e.DEMO_SECRET) {
+      issue.addIssue({
+        code: 'custom',
+        message: 'DEMO_SECRET is required when DEMO_ENABLED=true',
+        path: ['DEMO_SECRET'],
+      });
+    }
     if (e.NODE_ENV === 'production' && e.AUTH_MODE === 'dev') {
       issue.addIssue({
         code: 'custom',

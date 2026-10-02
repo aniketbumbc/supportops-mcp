@@ -2,8 +2,8 @@ import { and, count, desc, eq, gt, isNull, sql } from 'drizzle-orm';
 import { env } from '../config/env';
 import { logger } from '../config/logger';
 import { db } from '../db/client';
-import { personalAccessTokens, users } from '../db/schema/index';
-import { Errors } from '../errors/index';
+import { auditLog, personalAccessTokens, users } from '../db/schema/index';
+import { AppError, Errors } from '../errors/index';
 import {
   AuthError,
   forgetPat,
@@ -58,6 +58,13 @@ export interface CreatedPat extends PatSummary {
   /** The full token. Returned exactly once, at creation, and never stored. */
   token: string;
 }
+
+/** The account behind the public "Try demo" button (created by the seed). */
+export const DEMO_USER_EMAIL = 'demo@crm.example';
+/** Demo sessions are short; normal logins use JWT_ACCESS_TTL_MINUTES. */
+export const DEMO_TTL_MINUTES = 15;
+/** Demo PATs (for trying Cursor / Claude) expire this fast, whatever was asked for. */
+export const DEMO_PAT_MINUTES = 30;
 
 /** Most active tokens one user may hold. */
 export const MAX_ACTIVE_PATS = 10;
@@ -154,6 +161,73 @@ export class AuthService {
     };
   }
 
+  /**
+   * Passwordless login as the demo account, for a short session. The route checks
+   * the shared secret and the per-visitor limit before calling this.
+   */
+  async demoLogin(input: {
+    visitorIp: string;
+    correlationId: string;
+  }): Promise<LoginResult> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(sql`lower(${users.email})`, DEMO_USER_EMAIL));
+    if (!user || !user.isActive) {
+      this.log.error('Demo login failed: demo account missing or disabled');
+      throw new AppError(
+        'UPSTREAM_UNAVAILABLE',
+        'The demo is not available right now.',
+      );
+    }
+
+    await db
+      .update(users)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(users.id, user.id));
+
+    const publicUser: PublicUser = {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      roles: toKnownRoles(user.roles),
+      tenantId: user.tenantId,
+    };
+    const issued = await issueAccessToken(publicUser, DEMO_TTL_MINUTES);
+
+    try {
+      await db.insert(auditLog).values({
+        correlationId: input.correlationId,
+        tenantId: user.tenantId,
+        userId: user.id,
+        roles: publicUser.roles,
+        authMethod: 'demo',
+        tokenId: issued.tokenId,
+        toolName: 'demo_login',
+        actionType: 'write',
+        arguments: { visitor_ip: input.visitorIp },
+        outcome: 'success',
+        durationMs: 0,
+      });
+    } catch (error) {
+      // Same rule as tool calls: an audit failure must not break the login.
+      this.log.error(
+        { err: error, userId: user.id, visitorIp: input.visitorIp },
+        'AUDIT WRITE FAILED: demo login logged here instead',
+      );
+    }
+
+    this.log.info(
+      { userId: user.id, visitorIp: input.visitorIp },
+      'Demo login succeeded',
+    );
+    return {
+      accessToken: issued.token,
+      expiresAt: issued.expiresAt,
+      user: publicUser,
+    };
+  }
+
   /** The current user, read fresh from the database (current roles, still active). */
   async me(identity: VerifiedIdentity): Promise<
     PublicUser & {
@@ -212,6 +286,7 @@ export class AuthService {
         .where(eq(users.id, identity.userId))
         .for('update');
       if (!user || !user.isActive) throw new AuthError('user_inactive');
+      const isDemo = user.email.toLowerCase() === DEMO_USER_EMAIL;
 
       const [{ active } = { active: 0 }] = await tx
         .select({ active: count() })
@@ -236,7 +311,12 @@ export class AuthService {
           userId: identity.userId,
           name,
           tokenHint: 'pending',
-          expiresAt: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
+          expiresAt: new Date(
+            Date.now() +
+              (isDemo
+                ? DEMO_PAT_MINUTES * 60 * 1000
+                : days * 24 * 60 * 60 * 1000),
+          ),
         })
         .returning();
       const issued = await issuePersonalAccessToken({

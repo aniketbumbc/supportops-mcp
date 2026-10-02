@@ -24,6 +24,14 @@ const EnvSchema = z.object({
    * different address, e.g. https://api.example.com/mcp behind a proxy.
    */
   PUBLIC_MCP_URL: z.url().optional(),
+  /**
+   * Same value as DEMO_SECRET in server/.env. Lets the "Try demo" button call
+   * POST /auth/demo. Unset = the demo button can't sign anyone in.
+   */
+  DEMO_SECRET: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().min(32).optional(),
+  ),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

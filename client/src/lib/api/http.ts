@@ -26,12 +26,14 @@ interface Options<S extends z.ZodType> {
   token?: string;
   body?: unknown;
   query?: Record<string, string | undefined>;
+  /** Extra request headers, e.g. the demo secret. */
+  headers?: Record<string, string>;
   schema: S;
 }
 
 export async function apiFetch<S extends z.ZodType>(
   path: string,
-  { method = 'GET', token, body, query, schema }: Options<S>,
+  { method = 'GET', token, body, query, headers, schema }: Options<S>,
 ): Promise<z.infer<S>> {
   const url = new URL(path, env.MCP_SERVER_URL);
   for (const [k, v] of Object.entries(query ?? {}))
@@ -46,6 +48,7 @@ export async function apiFetch<S extends z.ZodType>(
         accept: 'application/json',
         ...(body !== undefined && { 'content-type': 'application/json' }),
         ...(token && { authorization: `Bearer ${token}` }),
+        ...headers,
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(TIMEOUT_MS),

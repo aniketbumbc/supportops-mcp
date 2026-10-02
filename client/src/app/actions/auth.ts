@@ -1,8 +1,9 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { ApiError, login } from '@/lib/api';
+import { ApiError, demoLogin, login } from '@/lib/api';
 import { clearSession, safeNextPath, setSession } from '@/lib/session';
 
 export interface LoginState {
@@ -44,6 +45,44 @@ export async function loginAction(
   }
   // redirect() must be outside try/catch: it works by throwing.
   redirect(safeNextPath(parsed.data.next));
+}
+
+export interface DemoState {
+  error: string | null;
+}
+
+/**
+ * The visitor's IP. Caddy is the only way in (the web container has no public port)
+ * and it sets X-Forwarded-For, so the last entry is the address Caddy saw.
+ */
+async function visitorIp(): Promise<string> {
+  const h = await headers();
+  const forwarded = h.get('x-forwarded-for')?.split(',').at(-1)?.trim();
+  return forwarded || h.get('x-real-ip')?.trim() || '127.0.0.1';
+}
+
+export async function demoLoginAction(): Promise<DemoState> {
+  try {
+    const result = await demoLogin(await visitorIp());
+    await setSession(result.accessToken, result.expiresAt);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      // The server's message already says "Demo available again in N minutes."
+      if (error.status === 429) return { error: error.message };
+      if (error.status === 404)
+        return { error: 'The demo is switched off right now.' };
+      if (error.status === 0) return { error: error.message };
+      return { error: 'Could not start the demo. Try again shortly.' };
+    }
+    throw error;
+  }
+  redirect('/chat');
+}
+
+/** Called by the demo banner when time is up. */
+export async function endDemoAction(): Promise<void> {
+  await clearSession();
+  redirect('/login?reason=demo-ended');
 }
 
 export async function logoutAction(): Promise<void> {

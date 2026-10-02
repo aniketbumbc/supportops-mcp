@@ -61,11 +61,14 @@ function baseJwt(
     .setIssuedAt();
 }
 
-/** Login token for the frontend. */
-export async function issueAccessToken(user: TokenUser): Promise<IssuedToken> {
+/** Login token for the frontend. Demo logins pass a shorter lifetime. */
+export async function issueAccessToken(
+  user: TokenUser,
+  ttlMinutes: number = env.JWT_ACCESS_TTL_MINUTES,
+): Promise<IssuedToken> {
   const key = await signingKey();
   const tokenId = randomUUID();
-  const expiresAt = new Date(Date.now() + env.JWT_ACCESS_TTL_MINUTES * 60_000);
+  const expiresAt = new Date(Date.now() + ttlMinutes * 60_000);
 
   const token = await baseJwt(
     {

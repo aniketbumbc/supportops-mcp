@@ -37,6 +37,24 @@ export async function getSessionToken(): Promise<string | null> {
 }
 
 /**
+ * When the session token expires, from its "exp" claim. Only for display (the demo
+ * countdown): the server still verifies the token on every call.
+ */
+export async function getSessionExpiry(): Promise<Date | null> {
+  const token = await getSessionToken();
+  const payload = token?.split('.')[1];
+  if (!payload) return null;
+  try {
+    const { exp } = JSON.parse(Buffer.from(payload, 'base64url').toString()) as {
+      exp?: unknown;
+    };
+    return typeof exp === 'number' ? new Date(exp * 1000) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The logged-in user, verified with the MCP server (/auth/me), or null.
  * cache(): called many times while rendering one request, it asks the server once.
  */

@@ -25,6 +25,7 @@ import {
   tickets,
 } from './schema/index.js';
 import { hashPassword } from '../gateway/passwords';
+import { DEMO_USER_EMAIL } from '../services/auth-service';
 
 // ─── Helpers ─────────────────────────────────────────────
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -728,6 +729,13 @@ const LOGIN_USERS = [
     roles: ['admin'],
     isActive: true,
   },
+  // Used by the public "Try demo" login. Has its own password (DEMO_USER_PASSWORD).
+  {
+    email: DEMO_USER_EMAIL,
+    displayName: 'Demo Admin',
+    roles: ['admin'],
+    isActive: true,
+  },
   // For testing that disabled accounts cannot log in.
   {
     email: 'disabled@crm.example',
@@ -748,6 +756,10 @@ async function seed() {
   const SEED_PASSWORD = process.env.SEED_USER_PASSWORD || '';
 
   const passwordHash = await hashPassword(SEED_PASSWORD);
+  // Without DEMO_USER_PASSWORD the demo account gets a random password nobody knows.
+  const DEMO_PASSWORD =
+    process.env.DEMO_USER_PASSWORD || randomBytes(32).toString('hex');
+  const demoPasswordHash = await hashPassword(DEMO_PASSWORD);
   const summary = await db.transaction(async (tx) => {
     // 1. Wipe mock data and platform activity (role policies are upserted below).
     await tx.execute(rawSql`
@@ -989,9 +1001,11 @@ async function seed() {
         });
     }
     for (const u of LOGIN_USERS) {
+      const hash =
+        u.email === DEMO_USER_EMAIL ? demoPasswordHash : passwordHash;
       await tx.execute(rawSql`
         INSERT INTO platform.users (email, password_hash, display_name, roles, is_active)
-        VALUES (${u.email}, ${passwordHash}, ${u.displayName}, ${`{${u.roles.join(',')}}`}::text[], ${u.isActive})
+        VALUES (${u.email}, ${hash}, ${u.displayName}, ${`{${u.roles.join(',')}}`}::text[], ${u.isActive})
         ON CONFLICT (lower(email)) DO UPDATE SET
           password_hash = EXCLUDED.password_hash,
           display_name  = EXCLUDED.display_name,

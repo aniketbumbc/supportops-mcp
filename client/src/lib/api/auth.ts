@@ -1,5 +1,6 @@
 import 'server-only';
 import { z } from 'zod';
+import { env } from '@/env';
 import { apiFetch } from './http';
 
 /** Roles the server knows. Anything else is ignored. */
@@ -18,6 +19,9 @@ const RoleList = z
   );
 
 // ─── Login / me ──────────────────────────────────────────
+
+/** The account behind the "Try demo" button (same as the server's DEMO_USER_EMAIL). */
+export const DEMO_USER_EMAIL = 'demo@crm.example';
 
 const LoginResponse = z
   .object({
@@ -70,6 +74,15 @@ export const login = (email: string, password: string) => {
     schema: LoginResponse,
   });
 };
+
+/** Short passwordless demo session. visitorIp is the browser's IP, for the per-visitor limit. */
+export const demoLogin = (visitorIp: string) =>
+  apiFetch('/auth/demo', {
+    method: 'POST',
+    headers: { 'x-demo-secret': env.DEMO_SECRET ?? '' },
+    body: { visitor_ip: visitorIp },
+    schema: LoginResponse,
+  });
 
 export const getMe = (token: string) =>
   apiFetch('/auth/me', { token, schema: MeResponse });

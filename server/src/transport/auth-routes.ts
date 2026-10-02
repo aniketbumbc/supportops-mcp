@@ -4,7 +4,9 @@ import type {
   FastifyReply,
   FastifyRequest,
 } from 'fastify';
+import { timingSafeEqual } from 'node:crypto';
 import { z, ZodError } from 'zod';
+import { env } from '../config/env';
 import { AppError, type ErrorCode } from '../errors/index';
 import {
   authenticate,
@@ -25,6 +27,7 @@ import type { Services } from '../services/index';
 /**
  * Auth endpoints for the frontend (and curl):
  *   POST   /auth/login         email + password → access token
+ *   POST   /auth/demo          short demo session, no password (web app only)
  *   GET    /auth/me            who am I
  *   POST   /auth/tokens        create a personal access token (for Cursor, Claude...)
  *   GET    /auth/tokens        list my tokens (never the token values)
@@ -47,6 +50,20 @@ const LoginBody = z.object({
   email: z.string().max(254),
   password: z.string().max(256),
 });
+
+const DemoBody = z.object({
+  /** The visitor's real IP, read by the web app (this server only sees the web app's IP). */
+  visitor_ip: z.union([z.ipv4(), z.ipv6()]),
+});
+
+/** Constant-time compare, so the secret can't be guessed one character at a time. */
+function isDemoSecret(given: string | string[] | undefined): boolean {
+  if (!env.DEMO_ENABLED || !env.DEMO_SECRET || typeof given !== 'string')
+    return false;
+  const a = Buffer.from(given);
+  const b = Buffer.from(env.DEMO_SECRET);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 const CreatePatBody = z.object({
   name: z.string().max(200),
@@ -175,6 +192,52 @@ export async function authRoutes(
           await recordLoginFailure(request.ip, email);
         throw error;
       }
+    },
+  );
+
+  // ─── Demo login ───────────────────────────────────────
+  app.post(
+    '/auth/demo',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      // No password, so only the web app (which knows DEMO_SECRET) may call this.
+      // Demo off (DEMO_ENABLED) or wrong secret looks the same as a missing route.
+      if (!isDemoSecret(request.headers['x-demo-secret'])) {
+        return reply
+          .status(404)
+          .send({ error: { code: 'NOT_FOUND', message: 'Not found' } });
+      }
+      const body = DemoBody.parse(request.body);
+
+      const limit = await consume(
+        [AUTH_LIMITS.demoPerIp],
+        `ip:${body.visitor_ip}`,
+      );
+      if (!limit.allowed) {
+        reply.headers(rateLimitHeaders(limit));
+        const minutes = Math.max(1, Math.ceil(limit.retryAfterSec / 60));
+        throw new AppError(
+          'RATE_LIMITED',
+          `Demo available again in ${minutes} minute${minutes === 1 ? '' : 's'}.`,
+          { retryAfterSeconds: limit.retryAfterSec },
+        );
+      }
+
+      const result = await auth.demoLogin({
+        visitorIp: body.visitor_ip,
+        correlationId: request.id,
+      });
+      return reply.send({
+        access_token: result.accessToken,
+        token_type: 'Bearer',
+        expires_at: result.expiresAt.toISOString(),
+        user: {
+          id: result.user.id,
+          email: result.user.email,
+          display_name: result.user.displayName,
+          roles: result.user.roles,
+          tenant_id: result.user.tenantId,
+        },
+      });
     },
   );
 
