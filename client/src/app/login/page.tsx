@@ -19,17 +19,20 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
     <main className="grid min-h-screen lg:h-dvh lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:overflow-hidden">
       {/* Brand panel: slim header on mobile, full column on desktop */}
       <section className="flex flex-col bg-brand px-6 py-6 text-brand-fg lg:overflow-hidden lg:px-14 lg:py-8">
-        <p className="text-xl font-bold tracking-tight text-[#34a386] lg:text-[1.7rem]">Enterprise SupportOps</p>
-        <div className="hidden lg:block">
-          <h2 className="mt-3 max-w-sm text-lg leading-snug text-brand-fg/75">
+        {/* Desktop: one centred column; the steps and agent card sit in the middle of it. */}
+        <div className="lg:mx-auto lg:flex lg:w-full lg:max-w-md lg:flex-1 lg:flex-col">
+          <p className="text-xl font-bold tracking-tight text-[#34a386] lg:text-[1.7rem]">Enterprise SupportOps</p>
+          <h2 className="mt-3 hidden text-lg leading-snug text-brand-fg/75 lg:block">
             Everything CRM support needs, in one window.
           </h2>
-          <CapabilitySteps />
-          <AgentDemo />
+          <div className="hidden flex-1 flex-col justify-center py-8 lg:flex">
+            <CapabilitySteps />
+            <AgentDemo />
+          </div>
+          <p className="hidden text-sm text-brand-fg/60 lg:block">
+            Every action is checked against your role and recorded.
+          </p>
         </div>
-        <p className="mt-auto hidden pt-6 text-sm text-brand-fg/60 lg:block">
-          Every action is checked against your role and recorded.
-        </p>
       </section>
 
       {/* Form */}

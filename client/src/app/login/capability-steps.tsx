@@ -46,7 +46,7 @@ export function CapabilitySteps() {
   const step = STEPS[active]!;
 
   return (
-    <div className="mt-8 max-w-sm">
+    <div className="w-full">
       <ol className="flex items-start">
         {STEPS.map(({ Icon, label, title, color }, i) => {
           const lit = i <= active;

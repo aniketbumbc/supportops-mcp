@@ -102,7 +102,7 @@ export function AgentDemo() {
   return (
     <div
       aria-hidden
-      className="mt-16 max-w-sm rounded-2xl [@media(max-height:680px)]:hidden border border-brand-fg/10 bg-brand-fg/[0.04] p-4 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.6)]"
+      className="mt-10 w-full rounded-2xl border border-brand-fg/10 bg-brand-fg/4 [@media(max-height:680px)]:hidden p-4 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.6)]"
     >
       <div className="flex items-center gap-2 text-[11px] font-semibold tracking-wider text-brand-fg/50 uppercase">
         <span className="size-1.5 rounded-full bg-[#34d399] motion-safe:animate-pulse" />
