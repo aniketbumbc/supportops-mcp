@@ -19,7 +19,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
     <main className="grid min-h-screen lg:h-dvh lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:overflow-hidden">
       {/* Brand panel: slim header on mobile, full column on desktop */}
       <section className="flex flex-col bg-brand px-6 py-6 text-brand-fg lg:overflow-hidden lg:px-14 lg:py-8">
-        <p className="text-xl font-semibold tracking-tight lg:text-[1.7rem]">Enterprise SupportOps</p>
+        <p className="text-xl font-bold tracking-tight text-[#34a386] lg:text-[1.7rem]">Enterprise SupportOps</p>
         <div className="hidden lg:block">
           <h2 className="mt-3 max-w-sm text-lg leading-snug text-brand-fg/75">
             Everything CRM support needs, in one window.
