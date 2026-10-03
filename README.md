@@ -138,7 +138,7 @@ pnpm dev   # http://localhost:3000
 
 ### Demo users
 
-All demo users log in with the password from `SEED_USER_PASSWORD`. In development, the login page lists them as one-click shortcuts.
+All demo users log in with the password from `SEED_USER_PASSWORD`.
 
 | Email | Role |
 |---|---|

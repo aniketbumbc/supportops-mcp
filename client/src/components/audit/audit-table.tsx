@@ -1,4 +1,5 @@
 import { Badge } from '@/components/cards/cardui';
+import { DEMO_USER_EMAIL } from '@/lib/api';
 import type { AuditEntry } from '@/lib/api/audit';
 import { humanize } from '@/lib/format';
 
@@ -41,7 +42,11 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
               <details className="group">
                 <summary className="grid cursor-pointer list-none grid-cols-[180px_1.2fr_1.3fr_130px_1fr_80px] items-center gap-3 px-4 py-2.5 text-sm hover:bg-ink/[0.02] focus-visible:bg-ledger-tint focus-visible:outline-none [&::-webkit-details-marker]:hidden">
                   <span className="whitespace-nowrap text-ink-soft">{time(e.occurredAt)}</span>
-                  <span className="truncate" title={e.userEmail ?? e.userId}>
+                  <span
+                    className="truncate"
+                    // The demo account's email stays off screen.
+                    title={e.userEmail === DEMO_USER_EMAIL ? (e.userName ?? undefined) : (e.userEmail ?? e.userId)}
+                  >
                     {e.userName ?? e.userId}
                   </span>
                   <span className="flex items-center gap-1.5 truncate">

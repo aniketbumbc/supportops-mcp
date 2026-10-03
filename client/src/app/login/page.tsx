@@ -1,18 +1,12 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowUpRight, BookOpen, Code, KeyRound, ScrollText, ShieldCheck, UserCheck } from 'lucide-react';
-import { DemoButton } from '@/components/demo/demo-button';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { getCurrentUser, safeNextPath } from '@/lib/session';
 import { LoginForm } from './login-form';
-import { InvoiceSlip, RefundSlip } from './refund-slip';
-
-const DEV_ACCOUNTS = [
-  { email: 'agent@crm.example', role: 'Support agent' },
-  { email: 'lead@crm.example', role: 'Support lead' },
-  { email: 'finance@crm.example', role: 'Finance' },
-  { email: 'admin@crm.example', role: 'Admin' },
-];
+import { AgentDemo } from './agent-demo';
+import { CapabilitySteps } from './capability-steps';
+import { DemoInvite } from './demo-invite';
 
 export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   const params = await searchParams;
@@ -22,26 +16,24 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   if (await getCurrentUser()) redirect(safeNextPath(next));
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <main className="grid min-h-screen lg:h-dvh lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:overflow-hidden">
       {/* Brand panel: slim header on mobile, full column on desktop */}
-      <section className="flex flex-col justify-between bg-brand px-6 py-6 text-brand-fg lg:px-14 lg:py-12">
-        <p className="text-lg font-semibold tracking-tight">Enterprise SupportOps</p>
+      <section className="flex flex-col bg-brand px-6 py-6 text-brand-fg lg:overflow-hidden lg:px-14 lg:py-8">
+        <p className="text-xl font-semibold tracking-tight lg:text-[1.7rem]">Enterprise SupportOps</p>
         <div className="hidden lg:block">
-          <h2 className="max-w-sm text-[2.1rem] leading-[1.15] font-medium tracking-tight">
-            Resolve customer issues. Money moves only when a person confirms.
+          <h2 className="mt-3 max-w-sm text-lg leading-snug text-brand-fg/75">
+            Everything CRM support needs, in one window.
           </h2>
-          <div className="mt-12 flex flex-col items-start gap-10 pl-2">
-            <RefundSlip />
-            <InvoiceSlip />
-          </div>
+          <CapabilitySteps />
+          <AgentDemo />
         </div>
-        <p className="hidden text-sm text-brand-fg/60 lg:block">
+        <p className="mt-auto hidden pt-6 text-sm text-brand-fg/60 lg:block">
           Every action is checked against your role and recorded.
         </p>
       </section>
 
       {/* Form */}
-      <section className="relative isolate flex items-center justify-center overflow-hidden px-6 py-12 lg:px-20">
+      <section className="relative isolate flex items-center justify-center overflow-hidden px-6 pt-20 pb-10 lg:overflow-y-auto lg:px-20">
         {/* Soft backdrop: a faint grid fading out from a ledger-green glow */}
         <div
           aria-hidden
@@ -60,16 +52,15 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
             <BookOpen aria-hidden className="size-4" />
             How it works
           </Link>
-          <DemoButton />
           <ThemeToggle />
         </div>
 
         <div className="w-full max-w-md">
-          <div className="rounded-2xl border border-rule bg-surface p-8 shadow-[0_20px_50px_-24px_rgba(27,42,58,0.25)] sm:p-10">
+          <div className="rounded-2xl border border-rule bg-surface p-8 shadow-[0_20px_50px_-24px_rgba(27,42,58,0.25)] sm:px-10 sm:py-8">
             <div className="flex size-11 items-center justify-center rounded-xl bg-ledger-tint text-ledger">
               <ShieldCheck aria-hidden className="size-5" />
             </div>
-            <h1 className="mt-5 text-2xl font-semibold tracking-tight text-ledger">Enterprise SupportOps</h1>
+            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-ledger">Enterprise SupportOps</h1>
             <p className="mt-1.5 text-[15px] text-ink-soft">Sign in with your work account to continue.</p>
 
             {params.reason === 'expired' && (
@@ -83,11 +74,9 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
               </p>
             )}
 
-            <div className="mt-8">
-              <LoginForm
-                next={next}
-                devAccounts={process.env.NODE_ENV === 'development' ? DEV_ACCOUNTS : undefined}
-              />
+            <div className="mt-6">
+              <LoginForm next={next} />
+              <DemoInvite />
             </div>
           </div>
 

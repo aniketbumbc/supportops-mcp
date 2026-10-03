@@ -1,31 +1,18 @@
 'use client';
 
-import { useActionState, useRef, useState } from 'react';
+import { useActionState, useState } from 'react';
 import { ArrowRight, Eye, EyeOff, LoaderCircle, Lock, Mail } from 'lucide-react';
 import { loginAction, type LoginState } from '@/app/actions/auth';
-
-export interface DevAccount {
-  email: string;
-  role: string;
-}
 
 const INPUT =
   'w-full rounded-lg border border-rule bg-paper/50 py-2.5 pr-3 pl-10 text-[15px] text-ink placeholder:text-ink-soft/60 transition focus:border-ledger focus:bg-surface focus:ring-4 focus:ring-ledger/15 focus:outline-none';
 
-export function LoginForm({ next, devAccounts }: { next?: string; devAccounts?: DevAccount[] }) {
+export function LoginForm({ next }: { next?: string }) {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(loginAction, {
     error: null,
     email: '',
   });
   const [showPassword, setShowPassword] = useState(false);
-  const emailRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
-
-  /** Dev only: fill the email and move to the password field. */
-  const fillAccount = (email: string) => {
-    if (emailRef.current) emailRef.current.value = email;
-    passwordRef.current?.focus();
-  };
 
   return (
     <div>
@@ -39,7 +26,6 @@ export function LoginForm({ next, devAccounts }: { next?: string; devAccounts?: 
           <div className="relative">
             <Mail aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft" />
             <input
-              ref={emailRef}
               id="email"
               name="email"
               type="email"
@@ -59,7 +45,6 @@ export function LoginForm({ next, devAccounts }: { next?: string; devAccounts?: 
           <div className="relative">
             <Lock aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft" />
             <input
-              ref={passwordRef}
               id="password"
               name="password"
               type={showPassword ? 'text' : 'password'}
@@ -103,29 +88,6 @@ export function LoginForm({ next, devAccounts }: { next?: string; devAccounts?: 
         </button>
       </form>
 
-      {devAccounts && devAccounts.length > 0 && (
-        <div className="mt-7">
-          <div className="flex items-center gap-3 text-xs text-ink-soft">
-            <span className="h-px flex-1 bg-rule" />
-            Demo accounts
-            <span className="h-px flex-1 bg-rule" />
-          </div>
-          <ul className="mt-3 grid grid-cols-2 gap-2">
-            {devAccounts.map((a) => (
-              <li key={a.email}>
-                <button
-                  type="button"
-                  onClick={() => fillAccount(a.email)}
-                  className="w-full rounded-lg border border-rule px-3 py-2 text-left transition hover:border-ledger/40 hover:bg-ledger-tint focus-visible:ring-2 focus-visible:ring-ledger/40 focus-visible:outline-none"
-                >
-                  <span className="block text-sm font-medium">{a.role}</span>
-                  <span className="block truncate text-xs text-ink-soft">{a.email}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
