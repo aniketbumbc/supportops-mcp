@@ -1,5 +1,6 @@
 import { Chat } from '@/components/chat/chat';
 import type { Suggestion } from '@/components/chat/suggestions';
+import { DEMO_USER_EMAIL } from '@/lib/api';
 import { requireUser } from '@/lib/session';
 
 /**
@@ -102,7 +103,7 @@ export default async function ChatPage({ searchParams }: PageProps<'/chat'>) {
           That page isn’t available for your role.
         </p>
       )}
-      <Chat firstName={user.displayName.split(' ')[0]!} suggestions={suggestionsFor(user.roles)}canRefund={user.roles.some((r) => ['support_lead', 'finance', 'admin'].includes(r))}
+      <Chat firstName={user.email === DEMO_USER_EMAIL ? 'Demo User' : user.displayName.split(' ')[0]!} suggestions={suggestionsFor(user.roles)}canRefund={user.roles.some((r) => ['support_lead', 'finance', 'admin'].includes(r))}
       />
     </>
   );
