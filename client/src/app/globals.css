@@ -36,18 +36,6 @@
       opacity: 0;
     }
   }
-  /* Login page: a dot travelling down the connector between two steps. */
-  --animate-travel-down: travel-down 700ms ease-out forwards;
-  @keyframes travel-down {
-    from {
-      top: 0;
-      opacity: 1;
-    }
-    to {
-      top: 100%;
-      opacity: 0;
-    }
-  }
   /* Dotted line whose dots march left to right (dot spacing is 10px). */
   --animate-dot-flow: dot-flow 600ms linear infinite;
   @keyframes dot-flow {
