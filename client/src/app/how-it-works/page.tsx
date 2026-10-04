@@ -82,10 +82,6 @@ export default function HowItWorksPage() {
         {/* Left: intro, project flow, tools */}
         <div className="flex flex-col gap-8">
           <div className="motion-safe:animate-fade-up">
-            <span className="inline-flex items-center gap-2 rounded-full border border-ledger/25 bg-ledger-tint px-2.5 py-0.5 text-[11px] font-medium text-ledger">
-              <span className="size-1.5 rounded-full bg-ledger motion-safe:animate-pulse" />
-              How it works
-            </span>
             <h1 className="mt-2.5 text-3xl leading-tight font-semibold tracking-tight xl:text-4xl">
               From a question to a <span className="text-ledger">confirmed refund</span>
             </h1>
