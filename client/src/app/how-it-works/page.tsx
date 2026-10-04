@@ -9,8 +9,8 @@ export const metadata = { title: 'How it works' };
 
 const STATS = [
   { value: '9', label: 'MCP tools' },
-  { value: '4', label: 'roles with limits' },
-  { value: '100%', label: 'refunds confirmed by a person' },
+  { value: '4', label: 'Roles with limits' },
+  { value: '100%', label: 'Refunds confirmed by a person' },
 ];
 
 const STACK: { group: string; items: string[] }[] = [
